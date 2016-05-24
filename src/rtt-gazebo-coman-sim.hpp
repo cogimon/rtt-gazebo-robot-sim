@@ -60,20 +60,13 @@ protected:
     std::vector<std::string> joint_names_;
     std::vector<int> joints_idx_;
 
-    RTT::InputPort<rstrt::kinematics::JointAngles> port_JointPositionCommand;
-    RTT::InputPort<rstrt::dynamics::JointImpedance> port_JointImpedanceCommand;
-    RTT::InputPort<rstrt::dynamics::JointTorques> port_JointTorqueCommand;
+    jointCtrl<rstrt::kinematics::JointAngles> jointPositionCtrl;
+    jointCtrl<rstrt::dynamics::JointImpedance> jointImpedanceCtrl;
+    jointCtrl<rstrt::dynamics::JointTorques> jointTorqueCtrl;
 
-    RTT::FlowStatus jnt_trq_cmd_fs, jnt_pos_cmd_fs, jnt_imp_cmd_fs;
-
-    RTT::OutputPort<rstrt::kinematics::JointAngles> port_JointPosition;
-    RTT::OutputPort<rstrt::kinematics::JointVelocities> port_JointVelocity;
-    RTT::OutputPort<rstrt::dynamics::JointTorques> port_JointTorque;
-
-    rstrt::kinematics::JointAngles jnt_pos_cmd_, jnt_pos_;
-    rstrt::dynamics::JointTorques jnt_trq_, jnt_trq_cmd_, jnt_trq_gazebo_cmd_;
-    rstrt::kinematics::JointVelocities jnt_vel_, jnt_vel_cmd_;
-    rstrt::dynamics::JointImpedance jnt_imp_, jnt_imp_cmd_;
+    jointFeedback<rstrt::kinematics::JointAngles> jointPositionFeedback;
+    jointFeedback<rstrt::kinematics::JointVelocities> jointVelocityFeedback;
+    jointFeedback<rstrt::dynamics::JointTorques> jointTorqueFeedback;
 
     jointCtrlModes::ControlModes currentControlMode;
 

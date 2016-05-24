@@ -21,18 +21,18 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getModel", &robotSim::getModel, this, ClientThread);
 
     ///TODO: add ports according to the SRDF configuration!
-    this->ports()->addPort(jointCtrlModes::positionCtrlPort, port_JointPositionCommand).doc(
+    this->ports()->addPort(jointCtrlModes::positionCtrlPort, jointPositionCtrl.orocos_port).doc(
             "Input for JointPosition-cmds from Orocos to Gazebo world.");
-    this->ports()->addPort(jointCtrlModes::impedanceCtrlPort, port_JointImpedanceCommand).doc(
+    this->ports()->addPort(jointCtrlModes::impedanceCtrlPort, jointImpedanceCtrl.orocos_port).doc(
             "Input for JointImpedance-cmds from Orocos to Gazebo world.");
-    this->ports()->addPort(jointCtrlModes::torqueCtrlPort, port_JointTorqueCommand).doc(
+    this->ports()->addPort(jointCtrlModes::torqueCtrlPort, jointTorqueCtrl.orocos_port).doc(
             "Input for JointTorque-cmds from Orocos to Gazebo world.");
 
-    this->ports()->addPort(jointFeedback::velocityFeedbackPort, port_JointVelocity).doc(
+    this->ports()->addPort(jointFeedbackModes::velocityFeedbackPort, jointVelocityFeedback.orocos_port).doc(
             "Output for JointVelocity-fbs from Gazebo to Orocos world.");
-    this->ports()->addPort(jointFeedback::torqueFeedbackPort, port_JointTorque).doc(
+    this->ports()->addPort(jointFeedbackModes::torqueFeedbackPort, jointTorqueFeedback.orocos_port).doc(
             "Output for JointTorques-fbs from Gazebo to Orocos world.");
-    this->ports()->addPort(jointFeedback::positionFeedbackPort, port_JointPosition).doc(
+    this->ports()->addPort(jointFeedbackModes::positionFeedbackPort, jointPositionFeedback.orocos_port).doc(
             "Output for JointPosition-fbs from Gazebo to Orocos world.");
 
     this->addOperation("setControlMode", &robotSim::setControlMode,
@@ -133,33 +133,26 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     RTT::log(RTT::Info) << "Gazebo model found " << joints_idx_.size()
             << " joints " << RTT::endlog();
 
-    jnt_pos_cmd_ = rstrt::kinematics::JointAngles(joints_idx_.size());
-    jnt_pos_cmd_.angles.setZero();
-    jnt_pos_ = rstrt::kinematics::JointAngles(joints_idx_.size());
-    jnt_pos_.angles.setZero();
+    jointPositionCtrl.joint_cmd = rstrt::kinematics::JointAngles(joints_idx_.size());
+    jointPositionCtrl.joint_cmd.angles.setZero();
+    jointPositionFeedback.joint_feedback= rstrt::kinematics::JointAngles(joints_idx_.size());
+    jointPositionFeedback.joint_feedback.angles.setZero();
 
-    jnt_trq_gazebo_cmd_ = rstrt::dynamics::JointTorques(joints_idx_.size());
-    jnt_trq_gazebo_cmd_.torques.setZero();
-    jnt_trq_cmd_ = rstrt::dynamics::JointTorques(joints_idx_.size());
-    jnt_trq_cmd_.torques.setZero();
-    jnt_trq_ = rstrt::dynamics::JointTorques(joints_idx_.size());
-    jnt_trq_.torques.setZero();
+    jointTorqueCtrl.joint_cmd = rstrt::dynamics::JointTorques(joints_idx_.size());
+    jointTorqueCtrl.joint_cmd.torques.setZero();
+    jointTorqueFeedback.joint_feedback = rstrt::dynamics::JointTorques(joints_idx_.size());
+    jointTorqueFeedback.joint_feedback.torques.setZero();
 
-    jnt_vel_cmd_ = rstrt::kinematics::JointVelocities(joints_idx_.size());
-    jnt_vel_cmd_.velocities.setZero();
-    jnt_vel_ = rstrt::kinematics::JointVelocities(joints_idx_.size());
-    jnt_vel_.velocities.setZero();
+    jointVelocityFeedback.joint_feedback = rstrt::kinematics::JointVelocities(joints_idx_.size());
+    jointVelocityFeedback.joint_feedback.velocities.setZero();
 
-    jnt_imp_cmd_ = rstrt::dynamics::JointImpedance(joints_idx_.size());
-    jnt_imp_cmd_.damping.setZero();
-    jnt_imp_cmd_.stiffness.setZero();
-    jnt_imp_ = rstrt::dynamics::JointImpedance(joints_idx_.size());
-    jnt_imp_.damping.setZero();
-    jnt_imp_.stiffness.setZero();
+    jointImpedanceCtrl.joint_cmd = rstrt::dynamics::JointImpedance(joints_idx_.size());
+    jointImpedanceCtrl.joint_cmd.damping.setZero();
+    jointImpedanceCtrl.joint_cmd.stiffness.setZero();
 
-    port_JointPosition.setDataSample(jnt_pos_);
-    port_JointVelocity.setDataSample(jnt_vel_);
-    port_JointTorque.setDataSample(jnt_trq_);
+    jointPositionFeedback.orocos_port.setDataSample(jointPositionFeedback.joint_feedback);
+    jointVelocityFeedback.orocos_port.setDataSample(jointVelocityFeedback.joint_feedback);
+    jointTorqueFeedback.orocos_port.setDataSample(jointTorqueFeedback.joint_feedback);
 
 
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
