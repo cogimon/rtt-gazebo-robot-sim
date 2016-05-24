@@ -84,11 +84,15 @@ bool robotSim::configureHook() {
     return is_configured;
 }
 
+//Here we already have the model!
 bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     if (model.get() == NULL) {
         RTT::log(RTT::Error) << "No model could be loaded" << RTT::endlog();
         return false;
     }
+
+    gazebo_joint_ctrl = model->GetJointController();
+    gazebo_joint_ctrl->Reset();
 
     // Get the joints
     gazebo_joints_ = model->GetJoints();
@@ -120,9 +124,12 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
         }
         joints_idx_.push_back(idx);
         joint_names_.push_back(name);
+        joint_scoped_names_.push_back((*jit)->GetScopedName());
         RTT::log(RTT::Info) << "Adding joint [" << name << "] idx:" << idx
                 << RTT::endlog();
     }
+
+
 
     if (joints_idx_.size() == 0) {
         RTT::log(RTT::Error) << "No Joints could be added, exiting"
@@ -132,6 +139,7 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
     RTT::log(RTT::Info) << "Gazebo model found " << joints_idx_.size()
             << " joints " << RTT::endlog();
+
 
     jointPositionCtrl.joint_cmd = rstrt::kinematics::JointAngles(joints_idx_.size());
     jointPositionCtrl.joint_cmd.angles.setZero();
@@ -153,6 +161,10 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     jointPositionFeedback.orocos_port.setDataSample(jointPositionFeedback.joint_feedback);
     jointVelocityFeedback.orocos_port.setDataSample(jointVelocityFeedback.joint_feedback);
     jointTorqueFeedback.orocos_port.setDataSample(jointTorqueFeedback.joint_feedback);
+
+
+    currentControlMode = jointCtrlModes::ControlModes::JointPositionCtrl;
+    RTT::log(RTT::Info) << "Initial default Ctrl Mode is " << jointCtrlModes::positionCtrlPort << RTT::endlog();
 
 
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();

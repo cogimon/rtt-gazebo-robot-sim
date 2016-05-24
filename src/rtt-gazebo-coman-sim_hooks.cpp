@@ -45,4 +45,19 @@ void robotSim::WorldUpdateBegin() {
 void robotSim::WorldUpdateEnd() {
     if (!is_configured && !isRunning())
         return;
+
+    if(currentControlMode == jointCtrlModes::ControlModes::JointPositionCtrl){
+        for(unsigned int i = 0; i < joint_names_.size(); ++i)
+        {
+            gazebo::common::PID pid;
+            pid.SetPGain(5000.);
+            pid.SetDGain(5.);
+            pid.SetIGain(0.);
+            gazebo_joint_ctrl->SetPositionPID(joint_scoped_names_[i], pid);
+            gazebo_joint_ctrl->SetPositionTarget(joint_scoped_names_[i], 0.0);
+        }
+    }
+
+
+
 }

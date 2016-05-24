@@ -58,6 +58,7 @@ protected:
     gazebo::physics::Joint_V gazebo_joints_;
     gazebo::physics::Link_V model_links_;
     std::vector<std::string> joint_names_;
+    std::vector<std::string> joint_scoped_names_;
     std::vector<int> joints_idx_;
 
     jointCtrl<rstrt::kinematics::JointAngles> jointPositionCtrl;
@@ -69,6 +70,8 @@ protected:
     jointFeedback<rstrt::dynamics::JointTorques> jointTorqueFeedback;
 
     jointCtrlModes::ControlModes currentControlMode;
+
+    gazebo::physics::JointControllerPtr gazebo_joint_ctrl;
 
 private:
     bool is_configured;
