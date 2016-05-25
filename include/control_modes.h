@@ -6,21 +6,13 @@
 
 namespace cogimon {
 
-    class jointCtrlModes {
-    public:
-        enum ControlModes {
-            JointPositionCtrl,
-            JointTorqueCtrl,
-            JointImpedanceCtrl
-        };
-
-        static constexpr const char* positionCtrlPort = "JointPositionCommand";
-        static constexpr const char* impedanceCtrlPort = "JointImpedanceCommand";
-        static constexpr const char* torqueCtrlPort = "JointTorqueCommand";
+    struct ControlModes{
+            static constexpr const char* JointPositionCtrl = "JointPositionCtrl";
+            static constexpr const char* JointTorqueCtrl = "JointTorqueCtrl";
+            static constexpr const char* JointImpedanceCtrl = "JointImpedanceCtrl";
     };
 
-    class jointFeedbackModes {
-    public:
+    struct FeedbackModesPorts {
         static constexpr const char* velocityFeedbackPort = "JointVelocity";
         static constexpr const char* torqueFeedbackPort = "JointTorque";
         static constexpr const char* positionFeedbackPort = "JointPosition";

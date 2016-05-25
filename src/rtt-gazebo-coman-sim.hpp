@@ -47,7 +47,10 @@ protected:
             const std::string& model_name, double timeout_s = 20.0);
     void gazeboUpdateHook(gazebo::physics::ModelPtr model);
     bool gazeboConfigureHook(gazebo::physics::ModelPtr model);
-    void setControlMode(const std::string& controlMode);
+    bool setControlMode(const std::string& controlMode);
+
+    bool initGazeboJointController();
+    void setInitialPosition();
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
@@ -69,7 +72,7 @@ protected:
     jointFeedback<rstrt::kinematics::JointVelocities> jointVelocityFeedback;
     jointFeedback<rstrt::dynamics::JointTorques> jointTorqueFeedback;
 
-    jointCtrlModes::ControlModes currentControlMode;
+    std::string currentControlMode;
 
     gazebo::physics::JointControllerPtr gazebo_joint_ctrl;
 

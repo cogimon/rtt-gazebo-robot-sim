@@ -4,6 +4,8 @@
 #include <fstream>
 #include <streambuf>
 
+#include "pid_values_tmp.h"
+
 using namespace cogimon;
 using namespace RTT;
 using namespace RTT::os;
@@ -21,18 +23,18 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getModel", &robotSim::getModel, this, ClientThread);
 
     ///TODO: add ports according to the SRDF configuration!
-    this->ports()->addPort(jointCtrlModes::positionCtrlPort, jointPositionCtrl.orocos_port).doc(
+    this->ports()->addPort(ControlModes::JointPositionCtrl, jointPositionCtrl.orocos_port).doc(
             "Input for JointPosition-cmds from Orocos to Gazebo world.");
-    this->ports()->addPort(jointCtrlModes::impedanceCtrlPort, jointImpedanceCtrl.orocos_port).doc(
+    this->ports()->addPort(ControlModes::JointImpedanceCtrl, jointImpedanceCtrl.orocos_port).doc(
             "Input for JointImpedance-cmds from Orocos to Gazebo world.");
-    this->ports()->addPort(jointCtrlModes::torqueCtrlPort, jointTorqueCtrl.orocos_port).doc(
+    this->ports()->addPort(ControlModes::JointTorqueCtrl, jointTorqueCtrl.orocos_port).doc(
             "Input for JointTorque-cmds from Orocos to Gazebo world.");
 
-    this->ports()->addPort(jointFeedbackModes::velocityFeedbackPort, jointVelocityFeedback.orocos_port).doc(
+    this->ports()->addPort(FeedbackModesPorts::velocityFeedbackPort, jointVelocityFeedback.orocos_port).doc(
             "Output for JointVelocity-fbs from Gazebo to Orocos world.");
-    this->ports()->addPort(jointFeedbackModes::torqueFeedbackPort, jointTorqueFeedback.orocos_port).doc(
+    this->ports()->addPort(FeedbackModesPorts::torqueFeedbackPort, jointTorqueFeedback.orocos_port).doc(
             "Output for JointTorques-fbs from Gazebo to Orocos world.");
-    this->ports()->addPort(jointFeedbackModes::positionFeedbackPort, jointPositionFeedback.orocos_port).doc(
+    this->ports()->addPort(FeedbackModesPorts::positionFeedbackPort, jointPositionFeedback.orocos_port).doc(
             "Output for JointPosition-fbs from Gazebo to Orocos world.");
 
     this->addOperation("setControlMode", &robotSim::setControlMode,
@@ -45,14 +47,26 @@ robotSim::robotSim(const std::string &name):
             boost::bind(&robotSim::WorldUpdateEnd, this));
 }
 
-void robotSim::setControlMode(const std::string& controlMode) {
-    if (controlMode == jointCtrlModes::positionCtrlPort) {
-        currentControlMode = jointCtrlModes::ControlModes::JointPositionCtrl;
-    } else if (controlMode == jointCtrlModes::torqueCtrlPort) {
-        currentControlMode = jointCtrlModes::ControlModes::JointTorqueCtrl;
-    } else if (controlMode == jointCtrlModes::impedanceCtrlPort) {
-        currentControlMode = jointCtrlModes::ControlModes::JointImpedanceCtrl;
+bool robotSim::setControlMode(const std::string& controlMode) {
+    if(controlMode == ControlModes::JointPositionCtrl){
+        if(!initGazeboJointController()){
+            RTT::log(RTT::Warning) << "Can NOT initialize Gazebo Joint Controller!" << RTT::endlog();
+            return false;}
+        else
+            setInitialPosition();
     }
+    else if(controlMode == ControlModes::JointTorqueCtrl || controlMode == ControlModes::JointImpedanceCtrl)
+        gazebo_joint_ctrl->Reset();
+    else {
+        RTT::log(RTT::Warning) << "Control Mode " << controlMode << " does not exist!" << RTT::endlog();
+        RTT::log(RTT::Warning) << "Available Control Modes are:" << RTT::endlog();
+        RTT::log(RTT::Warning) << "     "<< ControlModes::JointPositionCtrl << RTT::endlog();
+        RTT::log(RTT::Warning) << "     "<< ControlModes::JointImpedanceCtrl << RTT::endlog();
+        RTT::log(RTT::Warning) << "     "<< ControlModes::JointTorqueCtrl << RTT::endlog();
+        return false;}
+
+    currentControlMode = controlMode;
+    return true;
 }
 
 bool robotSim::getModel(const std::string& gazebo_comp_name,
@@ -91,8 +105,7 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
         return false;
     }
 
-    gazebo_joint_ctrl = model->GetJointController();
-    gazebo_joint_ctrl->Reset();
+
 
     // Get the joints
     gazebo_joints_ = model->GetJoints();
@@ -140,7 +153,6 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     RTT::log(RTT::Info) << "Gazebo model found " << joints_idx_.size()
             << " joints " << RTT::endlog();
 
-
     jointPositionCtrl.joint_cmd = rstrt::kinematics::JointAngles(joints_idx_.size());
     jointPositionCtrl.joint_cmd.angles.setZero();
     jointPositionFeedback.joint_feedback= rstrt::kinematics::JointAngles(joints_idx_.size());
@@ -163,12 +175,42 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     jointTorqueFeedback.orocos_port.setDataSample(jointTorqueFeedback.joint_feedback);
 
 
-    currentControlMode = jointCtrlModes::ControlModes::JointPositionCtrl;
-    RTT::log(RTT::Info) << "Initial default Ctrl Mode is " << jointCtrlModes::positionCtrlPort << RTT::endlog();
+    currentControlMode = ControlModes::JointPositionCtrl;
+    RTT::log(RTT::Info) << "Initial default Ctrl Mode is " << currentControlMode << RTT::endlog();
+
+    if(!initGazeboJointController()){
+        RTT::log(RTT::Error) << "Joint Controller can NOT be initialized, exiting" << RTT::endlog();
+        return false;
+    }
+    setInitialPosition();
 
 
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
     return true;
+}
+
+bool robotSim::initGazeboJointController()
+{
+    gazebo_joint_ctrl = model->GetJointController();
+    gazebo_joint_ctrl->Reset();
+
+    if(!(joint_names_.size() > 0))
+        return false;
+
+    hardcoded_pids PID;
+    for(unsigned int i = 0; i < joint_scoped_names_.size(); ++i)
+        gazebo_joint_ctrl->SetPositionPID(joint_scoped_names_[i], PID.pids[joint_names_[i]]);
+
+    return true;
+}
+
+void robotSim::setInitialPosition()
+{
+    ///TODO: check if user initial config is set
+
+    jointPositionCtrl.joint_cmd_fs = RTT::FlowStatus::NewData;
+    for(unsigned int i = 0; i < joint_names_.size(); ++i)
+        jointPositionCtrl.joint_cmd.angles[i] = model->GetJoint(joint_names_[i])->GetAngle(0).Radian();
 }
 
 ORO_CREATE_COMPONENT(cogimon::robotSim)

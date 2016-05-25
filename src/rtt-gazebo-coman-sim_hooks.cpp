@@ -26,9 +26,12 @@ void robotSim::WorldUpdateBegin() {
     }
 
 
-    jointTorqueCtrl.joint_cmd_fs = jointTorqueCtrl.orocos_port.readNewest(jointTorqueCtrl.joint_cmd);
-    jointPositionCtrl.joint_cmd_fs = jointPositionCtrl.orocos_port.readNewest(jointPositionCtrl.joint_cmd);
-    jointImpedanceCtrl.joint_cmd_fs = jointImpedanceCtrl.orocos_port.readNewest(jointImpedanceCtrl.joint_cmd);
+    if(currentControlMode == ControlModes::JointTorqueCtrl)
+        jointTorqueCtrl.joint_cmd_fs = jointTorqueCtrl.orocos_port.readNewest(jointTorqueCtrl.joint_cmd);
+    if(currentControlMode == ControlModes::JointPositionCtrl || currentControlMode == ControlModes::JointImpedanceCtrl)
+        jointPositionCtrl.joint_cmd_fs = jointPositionCtrl.orocos_port.readNewest(jointPositionCtrl.joint_cmd);
+    if(currentControlMode == ControlModes::JointPositionCtrl)
+        jointImpedanceCtrl.joint_cmd_fs = jointImpedanceCtrl.orocos_port.readNewest(jointImpedanceCtrl.joint_cmd);
 
 
     // write feedback to Orocos
@@ -46,16 +49,16 @@ void robotSim::WorldUpdateEnd() {
     if (!is_configured && !isRunning())
         return;
 
-    if(currentControlMode == jointCtrlModes::ControlModes::JointPositionCtrl){
+    if(currentControlMode == ControlModes::JointPositionCtrl){
         for(unsigned int i = 0; i < joint_names_.size(); ++i)
-        {
-            gazebo::common::PID pid;
-            pid.SetPGain(5000.);
-            pid.SetDGain(5.);
-            pid.SetIGain(0.);
-            gazebo_joint_ctrl->SetPositionPID(joint_scoped_names_[i], pid);
-            gazebo_joint_ctrl->SetPositionTarget(joint_scoped_names_[i], 0.0);
-        }
+            gazebo_joint_ctrl->SetPositionTarget(joint_scoped_names_[i], jointPositionCtrl.joint_cmd.angles(i));
+    }
+    else if(currentControlMode == ControlModes::JointTorqueCtrl){
+        for(unsigned int i = 0; i < joint_names_.size(); ++i)
+            model->GetJoint(joint_names_[i])->SetForce(0, jointTorqueCtrl.joint_cmd.torques(i));
+    }
+    else if(currentControlMode == ControlModes::JointImpedanceCtrl){
+        ///TODO
     }
 
 
