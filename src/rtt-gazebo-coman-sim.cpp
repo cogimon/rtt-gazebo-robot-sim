@@ -105,53 +105,18 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
         return false;
     }
 
-
-
     // Get the joints
     gazebo_joints_ = model->GetJoints();
     model_links_ = model->GetLinks();
 
-    RTT::log(RTT::Info) << "Model name "<< model->GetName()
-            << RTT::endlog();
-    RTT::log(RTT::Info) << "Model has " << gazebo_joints_.size() << " joints"
-            << RTT::endlog();
-    RTT::log(RTT::Info) << "Model has " << model_links_.size() << " links"
-            << RTT::endlog();
+    RTT::log(RTT::Info) << "Model name "<< model->GetName() << RTT::endlog();
+    RTT::log(RTT::Info) << "Model has " << gazebo_joints_.size() << " joints" << RTT::endlog();
+    RTT::log(RTT::Info) << "Model has " << model_links_.size() << " links" << RTT::endlog();
 
-    //NOTE: Get the joint names and store their indices
-    // Because we have base_joint (fixed), j0...j6, ati_joint (fixed)
-    int idx = 0;
-    joints_idx_.clear();
-    for (gazebo::physics::Joint_V::iterator jit = gazebo_joints_.begin();
-            jit != gazebo_joints_.end(); ++jit, ++idx) {
-
-        const std::string name = (*jit)->GetName();
-        // NOTE: Remove fake fixed joints (revolute with upper==lower==0
-        // NOTE: This is not used anymore thanks to <disableFixedJointLumping>
-        // Gazebo option (ati_joint is fixed but gazebo can use it )
-
-        if ((*jit)->GetLowerLimit(0u) == (*jit)->GetUpperLimit(0u)) {
-            RTT::log(RTT::Warning) << "Not adding (fake) fixed joint [" << name
-                    << "] idx:" << idx << RTT::endlog();
-            continue;
-        }
-        joints_idx_.push_back(idx);
-        joint_names_.push_back(name);
-        joint_scoped_names_.push_back((*jit)->GetScopedName());
-        RTT::log(RTT::Info) << "Adding joint [" << name << "] idx:" << idx
-                << RTT::endlog();
-    }
-
-
-
-    if (joints_idx_.size() == 0) {
-        RTT::log(RTT::Error) << "No Joints could be added, exiting"
-                << RTT::endlog();
+    if(!setJointNamesAndIndices())
         return false;
-    }
 
-    RTT::log(RTT::Info) << "Gazebo model found " << joints_idx_.size()
-            << " joints " << RTT::endlog();
+    RTT::log(RTT::Info) << "Gazebo model found " << joints_idx_.size() << " joints " << RTT::endlog();
 
     jointPositionCtrl.joint_cmd = rstrt::kinematics::JointAngles(joints_idx_.size());
     jointPositionCtrl.joint_cmd.angles.setZero();
@@ -206,11 +171,45 @@ bool robotSim::initGazeboJointController()
 
 void robotSim::setInitialPosition()
 {
-    ///TODO: check if user initial config is set
+    ///TODO: check if user initial config is set when it is used in the gazebo configure hook
 
-    jointPositionCtrl.joint_cmd_fs = RTT::FlowStatus::NewData;
+    jointPositionCtrl.orocos_port.clear();
     for(unsigned int i = 0; i < joint_names_.size(); ++i)
         jointPositionCtrl.joint_cmd.angles[i] = model->GetJoint(joint_names_[i])->GetAngle(0).Radian();
+    jointPositionCtrl.joint_cmd_fs = RTT::FlowStatus::NewData;
+}
+
+bool robotSim::setJointNamesAndIndices()
+{
+    //NOTE: Get the joint names and store their indices
+    // Because we have base_joint (fixed), j0...j6, ati_joint (fixed)
+    int idx = 0;
+    joints_idx_.clear();
+    for (gazebo::physics::Joint_V::iterator jit = gazebo_joints_.begin();
+            jit != gazebo_joints_.end(); ++jit, ++idx) {
+
+        const std::string name = (*jit)->GetName();
+        // NOTE: Remove fake fixed joints (revolute with upper==lower==0
+        // NOTE: This is not used anymore thanks to <disableFixedJointLumping>
+        // Gazebo option (ati_joint is fixed but gazebo can use it )
+
+        if ((*jit)->GetLowerLimit(0u) == (*jit)->GetUpperLimit(0u)) {
+            RTT::log(RTT::Warning) << "Not adding (fake) fixed joint [" << name
+                    << "] idx:" << idx << RTT::endlog();
+            continue;
+        }
+        joints_idx_.push_back(idx);
+        joint_names_.push_back(name);
+        joint_scoped_names_.push_back((*jit)->GetScopedName());
+        RTT::log(RTT::Info) << "Adding joint [" << name << "] idx:" << idx << RTT::endlog();
+    }
+
+    if (joints_idx_.size() == 0) {
+        RTT::log(RTT::Error) << "No Joints could be added, exiting" << RTT::endlog();
+        return false;
+    }
+
+    return true;
 }
 
 ORO_CREATE_COMPONENT(cogimon::robotSim)

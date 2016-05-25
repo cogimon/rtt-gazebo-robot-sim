@@ -51,6 +51,7 @@ protected:
 
     bool initGazeboJointController();
     void setInitialPosition();
+    bool setJointNamesAndIndices();
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
