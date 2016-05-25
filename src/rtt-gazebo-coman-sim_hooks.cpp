@@ -52,6 +52,7 @@ void robotSim::WorldUpdateEnd() {
     if(currentControlMode == ControlModes::JointPositionCtrl){
         for(unsigned int i = 0; i < joint_names_.size(); ++i)
             gazebo_joint_ctrl->SetPositionTarget(joint_scoped_names_[i], jointPositionCtrl.joint_cmd.angles(i));
+        gazebo_joint_ctrl->Update();
     }
     else if(currentControlMode == ControlModes::JointTorqueCtrl){
         for(unsigned int i = 0; i < joint_names_.size(); ++i)

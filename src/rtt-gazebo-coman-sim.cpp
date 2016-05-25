@@ -105,6 +105,8 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
         return false;
     }
 
+    gazebo_joint_ctrl.reset(new gazebo::physics::JointController(model));
+
     // Get the joints
     gazebo_joints_ = model->GetJoints();
     model_links_ = model->GetLinks();
@@ -156,8 +158,8 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
 bool robotSim::initGazeboJointController()
 {
-    gazebo_joint_ctrl = model->GetJointController();
-    gazebo_joint_ctrl->Reset();
+    for(unsigned int i = 0; i < joint_names_.size(); ++i)
+            gazebo_joint_ctrl->AddJoint(model->GetJoint(joint_names_[i]));
 
     if(!(joint_names_.size() > 0))
         return false;
