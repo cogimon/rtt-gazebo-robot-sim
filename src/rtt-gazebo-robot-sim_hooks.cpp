@@ -1,4 +1,4 @@
-#include "rtt-gazebo-coman-sim.hpp"
+#include "rtt-gazebo-robot-sim.hpp"
 #include <Eigen/Dense>
 
 using namespace cogimon;
