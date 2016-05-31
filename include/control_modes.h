@@ -12,10 +12,10 @@ namespace cogimon {
             static constexpr const char* JointImpedanceCtrl = "JointImpedanceCtrl";
     };
 
-    struct FeedbackModesPorts {
-        static constexpr const char* velocityFeedbackPort = "JointVelocity";
-        static constexpr const char* torqueFeedbackPort = "JointTorque";
-        static constexpr const char* positionFeedbackPort = "JointPosition";
+    struct FeedbackModes {
+        static constexpr const char* velocityFeedback = "JointVelocity";
+        static constexpr const char* torqueFeedback = "JointTorque";
+        static constexpr const char* positionFeedback = "JointPosition";
     };
 
 

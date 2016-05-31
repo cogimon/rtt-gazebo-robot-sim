@@ -57,7 +57,7 @@ include_directories(
     ${TINYXML_INCLUDE_DIRS}
 )
 
-orocos_component(${PROJECT_NAME} src/rtt-gazebo-robot-sim.cpp src/rtt-gazebo-robot-sim_hooks.cpp)
+orocos_component(${PROJECT_NAME} src/rtt-gazebo-robot-sim.cpp src/rtt-gazebo-robot-sim_hooks.cpp src/kinematic_chain.cpp)
 set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS RTT_COMPONENT)
 
 target_link_libraries(${PROJECT_NAME}
