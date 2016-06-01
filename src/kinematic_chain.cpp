@@ -3,20 +3,28 @@
 
 
 using namespace cogimon;
-KinematicChain::KinematicChain(const std::string& chain_name, RTT::DataFlowInterface& ports,
+KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<std::string> &joint_names, RTT::DataFlowInterface& ports,
                                gazebo::physics::ModelPtr model):
     _kinematic_chain_name(chain_name),
     _ports(ports),
     _model(model),
     _current_control_mode(std::string(ControlModes::JointPositionCtrl))
 {
+    RTT::log(RTT::Info) << "Creating Kinematic Chain " << chain_name << RTT::endlog();
 
+    for(unsigned int i = 0; i < joint_names.size(); ++i)
+        _map_joint_name_scoped_name.insert(std::pair<std::string, std::string>(joint_names[i], " "));
+
+    std::vector<std::string> joint_names_ = getJointNames();
+    RTT::log(RTT::Info) << "Joints: " << RTT::endlog();
+    for(unsigned int i = 0; i < joint_names_.size(); ++i)
+        RTT::log(RTT::Info) << "    " << joint_names_[i] << RTT::endlog();
 }
 
 bool KinematicChain::initKinematicChain()
 {
     setJointNamesAndIndices();
-    _number_of_dofs = _map_joint_name_indices.size();
+    _number_of_dofs = _map_joint_name_scoped_name.size();
 
     if(!setController(std::string(ControlModes::JointPositionCtrl)))
         return false;
@@ -51,20 +59,11 @@ std::vector<std::string> KinematicChain::getJointScopedNames()
 
 std::vector<std::string> KinematicChain::getJointNames()
 {
-    std::map<std::string, unsigned int>::iterator it;
+    std::map<std::string, std::string>::iterator it;
     std::vector<std::string> joint_names;
-    for(it = _map_joint_name_indices.begin(); it != _map_joint_name_indices.end(); it++)
+    for(it = _map_joint_name_scoped_name.begin(); it != _map_joint_name_scoped_name.end(); it++)
         joint_names.push_back(it->first);
     return joint_names;
-}
-
-std::vector<unsigned int> KinematicChain::getJointIndices()
-{
-    std::map<std::string, unsigned int>::iterator it;
-    std::vector<unsigned int> joint_indices;
-    for(it = _map_joint_name_indices.begin(); it != _map_joint_name_indices.end(); it++)
-        joint_indices.push_back(it->second);
-    return joint_indices;
 }
 
 std::vector<std::string> KinematicChain::getControllersAvailable()
@@ -91,7 +90,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
 {
     if(feedback_type == FeedbackModes::positionFeedback){
         position_feedback.reset(new position_fbk);
-        _ports.addPort(_kinematic_chain_name+"/"+FeedbackModes::positionFeedback, position_feedback->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::positionFeedback, position_feedback->orocos_port).doc(
                 "Output for JointPosition-fbs from Gazebo to Orocos world.");
         position_feedback->joint_feedback = JointAngles(_number_of_dofs);
         position_feedback->joint_feedback.angles.setZero();
@@ -100,7 +99,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
     }
     else if(feedback_type == FeedbackModes::velocityFeedback){
         velocity_feedback.reset(new velocity_fbk);
-        _ports.addPort(_kinematic_chain_name+"/"+FeedbackModes::velocityFeedback, velocity_feedback->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::velocityFeedback, velocity_feedback->orocos_port).doc(
                 "Output for JointVelocity-fbs from Gazebo to Orocos world.");
         velocity_feedback->joint_feedback = JointVelocities(_number_of_dofs);
         velocity_feedback->joint_feedback.velocities.setZero();
@@ -109,7 +108,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
     }
     else if(feedback_type == FeedbackModes::torqueFeedback){
         torque_feedback.reset(new torque_fbk);
-        _ports.addPort(_kinematic_chain_name+"/"+FeedbackModes::torqueFeedback, torque_feedback->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::torqueFeedback, torque_feedback->orocos_port).doc(
                 "Output for JointTorques-fbs from Gazebo to Orocos world.");
         torque_feedback->joint_feedback = JointTorques(_number_of_dofs);
         torque_feedback->joint_feedback.torques.setZero();
@@ -126,7 +125,7 @@ bool KinematicChain::setController(const std::string& controller_type)
 {
     if(controller_type == ControlModes::JointPositionCtrl){
         position_controller.reset(new position_ctrl);
-        _ports.addPort(_kinematic_chain_name+"/"+ControlModes::JointPositionCtrl, position_controller->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointPositionCtrl, position_controller->orocos_port).doc(
                 "Input for JointPosition-cmds from Orocos to Gazebo world.");
 
         position_controller->joint_cmd = JointAngles(_number_of_dofs);
@@ -136,7 +135,7 @@ bool KinematicChain::setController(const std::string& controller_type)
     }
     else if(controller_type == ControlModes::JointImpedanceCtrl){
         impedance_controller.reset(new impedance_ctrl);
-        _ports.addPort(_kinematic_chain_name+"/"+ControlModes::JointImpedanceCtrl, impedance_controller->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointImpedanceCtrl, impedance_controller->orocos_port).doc(
                 "Input for JointImpedance-cmds from Orocos to Gazebo world.");
         impedance_controller->joint_cmd = JointImpedance(_number_of_dofs);
         impedance_controller->joint_cmd.stiffness.setZero();
@@ -145,7 +144,7 @@ bool KinematicChain::setController(const std::string& controller_type)
     else if(controller_type == ControlModes::JointTorqueCtrl)
     {
         torque_controller.reset(new torque_ctrl);
-        _ports.addPort(_kinematic_chain_name+"/"+ControlModes::JointTorqueCtrl, torque_controller->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointTorqueCtrl, torque_controller->orocos_port).doc(
                 "Input for JointTorque-cmds from Orocos to Gazebo world.");
         torque_controller->joint_cmd = JointTorques(_number_of_dofs);
         torque_controller->joint_cmd.torques.setZero();
@@ -159,32 +158,18 @@ bool KinematicChain::setController(const std::string& controller_type)
 
 bool KinematicChain::setJointNamesAndIndices()
 {
-    //NOTE: Get the joint names and store their indices
-    // Because we have base_joint (fixed), j0...j6, ati_joint (fixed)
-    int idx = 0;
-    for (gazebo::physics::Joint_V::const_iterator jit = _model->GetJoints().begin();
-            jit != _model->GetJoints().end(); ++jit, ++idx) {
+    std::map<std::string, std::string>::iterator it1;
+    for(it1 = _map_joint_name_scoped_name.begin(); it1 != _map_joint_name_scoped_name.end(); it1++)
+    {
+        gazebo::physics::JointPtr joint = _model->GetJoint(it1->first);
+        if(!joint){
+            RTT::log(RTT::Error) << "No Joint" << it1->first << " could be added, exiting" << RTT::endlog();
+            return false;}
+        _map_joint_name_scoped_name[it1->first] = _model->GetJoint(it1->first)->GetScopedName();
 
-        const std::string name = (*jit)->GetName();
-        // NOTE: Remove fake fixed joints (revolute with upper==lower==0
-        // NOTE: This is not used anymore thanks to <disableFixedJointLumping>
-        // Gazebo option (ati_joint is fixed but gazebo can use it )
-
-        if ((*jit)->GetLowerLimit(0u) == (*jit)->GetUpperLimit(0u)) {
-            RTT::log(RTT::Warning) << "Not adding (fake) fixed joint [" << name
-                    << "] idx:" << idx << RTT::endlog();
-            continue;
-        }
-        _map_joint_name_indices.insert(std::pair<std::string, unsigned int>(name, idx));
-        _map_joint_name_scoped_name.insert(std::pair<std::string, std::string>(name, (*jit)->GetScopedName()));
-        RTT::log(RTT::Info) << "Adding joint [" << name << "] idx:" << idx << RTT::endlog();
+        RTT::log(RTT::Info) << "Joint " << it1->first << " in chain " << _kinematic_chain_name <<
+                               " has scoped name " << _map_joint_name_scoped_name[it1->first] << RTT::endlog();
     }
-
-    if (_map_joint_name_indices.size() == 0) {
-        RTT::log(RTT::Error) << "No Joints could be added, exiting" << RTT::endlog();
-        return false;
-    }
-
     return true;
 }
 
@@ -247,7 +232,7 @@ void KinematicChain::sense()
     if(position_feedback){
         for(unsigned int i = 0; i < _number_of_dofs; ++i)
             position_feedback->joint_feedback.angles(i) =
-                _model->GetJoints()[_map_joint_name_indices[joint_names[i]]]->GetAngle(0).Radian();
+                _model->GetJoint(joint_names[i])->GetAngle(0).Radian();
 
         if (position_feedback->orocos_port.connected())
             position_feedback->orocos_port.write(position_feedback->joint_feedback);
@@ -255,7 +240,7 @@ void KinematicChain::sense()
     if(velocity_feedback){
         for(unsigned int i = 0; i < _number_of_dofs; ++i)
             velocity_feedback->joint_feedback.velocities(i) =
-                _model->GetJoints()[_map_joint_name_indices[joint_names[i]]]->GetVelocity(0);
+                _model->GetJoint(joint_names[i])->GetVelocity(0);
 
         if (velocity_feedback->orocos_port.connected())
             velocity_feedback->orocos_port.write(velocity_feedback->joint_feedback);
@@ -263,9 +248,8 @@ void KinematicChain::sense()
     if(torque_feedback){
         for(unsigned int i = 0; i < _number_of_dofs; ++i){
             gazebo::physics::JointWrench w =
-                    _model->GetJoints()[_map_joint_name_indices[joint_names[i]]]->GetForceTorque(0u);
-            gazebo::math::Vector3 a = _model->GetJoints()[_map_joint_name_indices[joint_names[i]]]->GetLocalAxis(
-                    0u);
+                    _model->GetJoint(joint_names[i])->GetForceTorque(0u);
+            gazebo::math::Vector3 a = _model->GetJoint(joint_names[i])->GetLocalAxis(0u);
             torque_feedback->joint_feedback.torques(i) = a.Dot(w.body1Torque);
         }
 
@@ -303,4 +287,26 @@ void KinematicChain::move()
     else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
         ///TODO
     }
+}
+
+std::string KinematicChain::printKinematicChainInformation()
+{
+    std::vector<std::string> joint_names = getJointNames();
+    std::stringstream joint_names_stream;
+    for(unsigned int i = 0; i < joint_names.size(); ++i)
+        joint_names_stream << joint_names[i] << " ";
+
+    std::vector<std::string> controller_names = getControllersAvailable();
+    std::stringstream controller_names_stream;
+    for(unsigned int i = 0; i < controller_names.size(); ++i)
+        controller_names_stream << controller_names[i] << " ";
+
+    std::stringstream info;
+    info << "Kinematic Chain: " << _kinematic_chain_name << std::endl;
+    info << "    Number of DOFs: " << _number_of_dofs << std::endl;
+    info << "    Joints:  [" << joint_names_stream.str() << "]" << std::endl;
+    info << "    Control Modes:  [ " << controller_names_stream.str() << "]" << std::endl;
+    info << "    Current Control Mode: " << _current_control_mode << std::endl;
+
+    return info.str();
 }

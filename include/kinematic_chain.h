@@ -27,20 +27,21 @@ typedef cogimon::jointFeedback<JointTorques> torque_fbk;
 
 class KinematicChain {
 public:
-    KinematicChain(const std::string& chain_name, RTT::DataFlowInterface& ports, gazebo::physics::ModelPtr model);
+    KinematicChain(const std::string& chain_name, const std::vector<std::string>& joint_names,
+                   RTT::DataFlowInterface& ports, gazebo::physics::ModelPtr model);
     ~KinematicChain(){}
 
     std::string getKinematicChainName();
     unsigned int getNumberOfDOFs();
     std::string getCurrentControlMode();
     std::vector<std::string> getJointNames();
-    std::vector<unsigned int> getJointIndices();
     std::vector<std::string> getControllersAvailable();
     bool initKinematicChain();
     bool setControlMode(const std::string& controlMode);
     void sense();
     void getCommand();
     void move();
+    std::string printKinematicChainInformation();
 
 
     boost::shared_ptr<position_ctrl> position_controller;
@@ -59,7 +60,6 @@ private:
     gazebo::physics::ModelPtr _model;
     std::string _current_control_mode;
     gazebo::physics::JointControllerPtr _gazebo_position_joint_controller;
-    std::map<std::string, unsigned int> _map_joint_name_indices;
     std::map<std::string, std::string> _map_joint_name_scoped_name;
 
     bool setController(const std::string& controller_type);

@@ -29,10 +29,23 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getKinematicChains", &robotSim::getKinematiChains,
                 this, RTT::ClientThread);
 
+    this->addOperation("printKinematicChainInformation", &robotSim::printKinematicChainInformation,
+                this, RTT::ClientThread);
+
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
             boost::bind(&robotSim::WorldUpdateEnd, this));
+}
+
+std::string robotSim::printKinematicChainInformation(const std::string& kinematic_chain)
+{
+    std::vector<std::string> chain_names = getKinematiChains();
+    if(!(std::find(chain_names.begin(), chain_names.end(), kinematic_chain) != chain_names.end())){
+        log(Warning) << "Kinematic Chain " << kinematic_chain << " is not available!" << endlog();
+        return "";}
+
+    return kinematic_chains[kinematic_chain]->printKinematicChainInformation();
 }
 
 std::string robotSim::getControlMode(const std::string& kinematic_chain)
@@ -121,9 +134,13 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     RTT::log(RTT::Info) << "Model has " << gazebo_joints_.size() << " joints" << RTT::endlog();
     RTT::log(RTT::Info) << "Model has " << model_links_.size() << " links" << RTT::endlog();
 
-    kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
-        "whole_robot", boost::shared_ptr<KinematicChain>(
-                                    new KinematicChain("whole_robot", *(this->ports()), model))));
+    hardcoded_chains chains;
+    std::map<std::string, std::vector<std::string>>::iterator it;
+    for(it = chains.map_chains_joints.begin(); it != chains.map_chains_joints.end(); it++)
+        kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
+            it->first, boost::shared_ptr<KinematicChain>(
+                                    new KinematicChain(it->first, it->second, *(this->ports()), model))));
+    RTT::log(RTT::Info) << "Kinematic Chains map created!" << RTT::endlog();
 
     for(std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it = kinematic_chains.begin();
         it != kinematic_chains.end(); it++){
@@ -133,6 +150,7 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
             return false;
         }
     }
+    RTT::log(RTT::Info) << "Kinematic Chains Initialized!" << RTT::endlog();
 
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
     return true;
