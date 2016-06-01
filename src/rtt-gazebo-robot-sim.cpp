@@ -138,6 +138,7 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     return true;
 }
 
-
-ORO_CREATE_COMPONENT(cogimon::robotSim)
+ORO_CREATE_COMPONENT_LIBRARY()
+//ORO_CREATE_COMPONENT(cogimon::robotSim)
+ORO_LIST_COMPONENT_TYPE(cogimon::robotSim)
 
