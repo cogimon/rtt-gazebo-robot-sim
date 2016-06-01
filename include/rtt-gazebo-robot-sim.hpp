@@ -48,6 +48,7 @@ protected:
     std::vector<std::string> getKinematiChains();
     std::string getControlMode(const std::string& kinematic_chain);
     std::vector<std::string> getControlAvailableMode(const std::string& kinematic_chain);
+    std::string printKinematicChainInformation(const std::string& kinematic_chain);
 
 
     gazebo::physics::ModelPtr model;
