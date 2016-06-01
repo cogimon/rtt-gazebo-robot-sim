@@ -20,12 +20,14 @@ robotSim::robotSim(const std::string &name):
     this->provides("gazebo")->addOperation("WorldUpdateEnd",
             &robotSim::WorldUpdateEnd, this, RTT::ClientThread);
 
-    this->addOperation("getModel", &robotSim::getModel, this, ClientThread);
-
+    this->addOperation("getModel", &robotSim::getModel,
+                this, ClientThread);
 
     this->addOperation("setControlMode", &robotSim::setControlMode,
                 this, RTT::ClientThread);
-    ///
+
+    this->addOperation("getKinematicChains", &robotSim::getKinematiChains,
+                this, RTT::ClientThread);
 
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
@@ -33,12 +35,46 @@ robotSim::robotSim(const std::string &name):
             boost::bind(&robotSim::WorldUpdateEnd, this));
 }
 
-bool robotSim::setControlMode(const std::string& controlMode) {
+std::string robotSim::getControlMode(const std::string& kinematic_chain)
+{
+    std::vector<std::string> chain_names = getKinematiChains();
+        if(!(std::find(chain_names.begin(), chain_names.end(), kinematic_chain) != chain_names.end())){
+            log(Warning) << "Kinematic Chain " << kinematic_chain << " is not available!" << endlog();
+            return "";}
 
-    log(Warning) << "NEEDS TO BE IMPLEMENTED!"
-            << endlog();
+    return kinematic_chains[kinematic_chain]->getCurrentControlMode();
+}
 
-    return true;
+std::vector<std::string> robotSim::getControlAvailableMode(const std::string& kinematic_chain)
+{
+    std::vector<std::string> control_modes;
+
+    std::vector<std::string> chain_names = getKinematiChains();
+    if(!(std::find(chain_names.begin(), chain_names.end(), kinematic_chain) != chain_names.end())){
+        log(Warning) << "Kinematic Chain " << kinematic_chain << " is not available!" << endlog();
+        control_modes.push_back("");}
+    else
+        kinematic_chains[kinematic_chain]->getControllersAvailable();
+    return control_modes;
+}
+
+std::vector<std::string> robotSim::getKinematiChains()
+{
+    std::vector<std::string> chains;
+    for(std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it = kinematic_chains.begin();
+        it != kinematic_chains.end(); it++)
+        chains.push_back(it->second->getKinematicChainName());
+    return chains;
+}
+
+bool robotSim::setControlMode(const std::string& kinematic_chain, const std::string& controlMode)
+{
+    std::vector<std::string> chain_names = getKinematiChains();
+    if(!(std::find(chain_names.begin(), chain_names.end(), kinematic_chain) != chain_names.end())){
+        log(Warning) << "Kinematic Chain " << kinematic_chain << " is not available!" << endlog();
+        return false;}
+
+    return kinematic_chains[kinematic_chain]->setControlMode(controlMode);
 }
 
 bool robotSim::getModel(const std::string& gazebo_comp_name,
@@ -85,10 +121,17 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     RTT::log(RTT::Info) << "Model has " << gazebo_joints_.size() << " joints" << RTT::endlog();
     RTT::log(RTT::Info) << "Model has " << model_links_.size() << " links" << RTT::endlog();
 
-    whole_robot.reset(new KinematicChain("whole_robot", *(this->ports()), model));
-    if(!whole_robot->initKinematicChain()){
-        RTT::log(RTT::Warning) << "Problem in initKinematicChain" << RTT::endlog();
-        return false;
+    kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
+        "whole_robot", boost::shared_ptr<KinematicChain>(
+                                    new KinematicChain("whole_robot", *(this->ports()), model))));
+
+    for(std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it = kinematic_chains.begin();
+        it != kinematic_chains.end(); it++){
+        if(!(it->second->initKinematicChain())){
+            RTT::log(RTT::Warning) << "Problem Init Kinematic Chain" <<
+                it->second->getKinematicChainName() << RTT::endlog();
+            return false;
+        }
     }
 
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
