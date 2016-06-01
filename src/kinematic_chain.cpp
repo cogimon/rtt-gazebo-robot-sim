@@ -91,7 +91,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
 {
     if(feedback_type == FeedbackModes::positionFeedback){
         position_feedback.reset(new position_fbk);
-        _ports.addPort(FeedbackModes::positionFeedback, position_feedback->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"/"+FeedbackModes::positionFeedback, position_feedback->orocos_port).doc(
                 "Output for JointPosition-fbs from Gazebo to Orocos world.");
         position_feedback->joint_feedback = JointAngles(_number_of_dofs);
         position_feedback->joint_feedback.angles.setZero();
@@ -100,7 +100,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
     }
     else if(feedback_type == FeedbackModes::velocityFeedback){
         velocity_feedback.reset(new velocity_fbk);
-        _ports.addPort(FeedbackModes::velocityFeedback, velocity_feedback->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"/"+FeedbackModes::velocityFeedback, velocity_feedback->orocos_port).doc(
                 "Output for JointVelocity-fbs from Gazebo to Orocos world.");
         velocity_feedback->joint_feedback = JointVelocities(_number_of_dofs);
         velocity_feedback->joint_feedback.velocities.setZero();
@@ -109,7 +109,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
     }
     else if(feedback_type == FeedbackModes::torqueFeedback){
         torque_feedback.reset(new torque_fbk);
-        _ports.addPort(FeedbackModes::torqueFeedback, torque_feedback->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"/"+FeedbackModes::torqueFeedback, torque_feedback->orocos_port).doc(
                 "Output for JointTorques-fbs from Gazebo to Orocos world.");
         torque_feedback->joint_feedback = JointTorques(_number_of_dofs);
         torque_feedback->joint_feedback.torques.setZero();
@@ -126,7 +126,7 @@ bool KinematicChain::setController(const std::string& controller_type)
 {
     if(controller_type == ControlModes::JointPositionCtrl){
         position_controller.reset(new position_ctrl);
-        _ports.addPort(ControlModes::JointPositionCtrl, position_controller->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"/"+ControlModes::JointPositionCtrl, position_controller->orocos_port).doc(
                 "Input for JointPosition-cmds from Orocos to Gazebo world.");
 
         position_controller->joint_cmd = JointAngles(_number_of_dofs);
@@ -136,7 +136,7 @@ bool KinematicChain::setController(const std::string& controller_type)
     }
     else if(controller_type == ControlModes::JointImpedanceCtrl){
         impedance_controller.reset(new impedance_ctrl);
-        _ports.addPort(ControlModes::JointImpedanceCtrl, impedance_controller->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"/"+ControlModes::JointImpedanceCtrl, impedance_controller->orocos_port).doc(
                 "Input for JointImpedance-cmds from Orocos to Gazebo world.");
         impedance_controller->joint_cmd = JointImpedance(_number_of_dofs);
         impedance_controller->joint_cmd.stiffness.setZero();
@@ -145,7 +145,7 @@ bool KinematicChain::setController(const std::string& controller_type)
     else if(controller_type == ControlModes::JointTorqueCtrl)
     {
         torque_controller.reset(new torque_ctrl);
-        _ports.addPort(ControlModes::JointTorqueCtrl, torque_controller->orocos_port).doc(
+        _ports.addPort(_kinematic_chain_name+"/"+ControlModes::JointTorqueCtrl, torque_controller->orocos_port).doc(
                 "Input for JointTorque-cmds from Orocos to Gazebo world.");
         torque_controller->joint_cmd = JointTorques(_number_of_dofs);
         torque_controller->joint_cmd.torques.setZero();
@@ -215,14 +215,14 @@ void KinematicChain::setInitialPosition()
 
 bool KinematicChain::setControlMode(const std::string &controlMode)
 {
-    if(!(controlMode == ControlModes::JointPositionCtrl) ||
-       !(controlMode == ControlModes::JointTorqueCtrl)   ||
-       !(controlMode == ControlModes::JointImpedanceCtrl) ){
+    if(controlMode != ControlModes::JointPositionCtrl &&
+       controlMode != ControlModes::JointTorqueCtrl   &&
+       controlMode != ControlModes::JointImpedanceCtrl ){
         RTT::log(RTT::Warning) << "Control Mode " << controlMode << " does not exist!" << RTT::endlog();
         return false;
     }
 
-    if(std::find(_controllers_name.begin(), _controllers_name.end(), controlMode) != _controllers_name.end()){
+    if(!(std::find(_controllers_name.begin(), _controllers_name.end(), controlMode) != _controllers_name.end())){
         RTT::log(RTT::Warning) << "Control Mode " << controlMode << " is not available!" << RTT::endlog();
         return false;
     }

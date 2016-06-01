@@ -44,7 +44,10 @@ protected:
             const std::string& model_name, double timeout_s = 20.0);
     void gazeboUpdateHook(gazebo::physics::ModelPtr model);
     bool gazeboConfigureHook(gazebo::physics::ModelPtr model);
-    bool setControlMode(const std::string& controlMode);
+    bool setControlMode(const std::string& kinematic_chain, const std::string& controlMode);
+    std::vector<std::string> getKinematiChains();
+    std::string getControlMode(const std::string& kinematic_chain);
+    std::vector<std::string> getControlAvailableMode(const std::string& kinematic_chain);
 
 
     gazebo::physics::ModelPtr model;
@@ -56,7 +59,7 @@ protected:
     gazebo::physics::Joint_V gazebo_joints_;
     gazebo::physics::Link_V model_links_;
 
-    boost::shared_ptr<KinematicChain> whole_robot;
+    std::map<std::string, boost::shared_ptr<KinematicChain>> kinematic_chains;
 
 private:
     bool is_configured;
