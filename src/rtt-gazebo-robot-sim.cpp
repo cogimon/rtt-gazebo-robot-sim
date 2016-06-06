@@ -90,8 +90,7 @@ bool robotSim::setControlMode(const std::string& kinematic_chain, const std::str
     return kinematic_chains[kinematic_chain]->setControlMode(controlMode);
 }
 
-bool robotSim::getModel(const std::string& gazebo_comp_name,
-        const std::string& model_name, double timeout_s) {
+bool robotSim::getModel(const std::string& model_name) {
     if (model) {
         log(Warning) << "Model [" << model_name << "] already loaded !"
                 << endlog();

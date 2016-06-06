@@ -40,8 +40,7 @@ public:
     virtual ~robotSim() {}
 
 protected:
-    bool getModel(const std::string& gazebo_comp_name,
-            const std::string& model_name, double timeout_s = 20.0);
+    bool getModel(const std::string& model_name);
     void gazeboUpdateHook(gazebo::physics::ModelPtr model);
     bool gazeboConfigureHook(gazebo::physics::ModelPtr model);
     bool setControlMode(const std::string& kinematic_chain, const std::string& controlMode);
