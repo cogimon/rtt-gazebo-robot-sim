@@ -42,6 +42,7 @@ public:
     void getCommand();
     void move();
     std::string printKinematicChainInformation();
+    std::vector<RTT::base::PortInterface*> getAssociatedPorts();
 
 
     boost::shared_ptr<position_ctrl> position_controller;
@@ -57,6 +58,9 @@ private:
     std::vector<std::string> _controllers_name;
     unsigned int _number_of_dofs;
     RTT::DataFlowInterface& _ports;
+
+    std::vector<RTT::base::PortInterface*> _inner_ports;
+
     gazebo::physics::ModelPtr _model;
     std::string _current_control_mode;
     gazebo::physics::JointControllerPtr _gazebo_position_joint_controller;
