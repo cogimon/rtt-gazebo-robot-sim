@@ -32,10 +32,44 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("printKinematicChainInformation", &robotSim::printKinematicChainInformation,
                 this, RTT::ClientThread);
 
+    this->provides("joint_info")->addOperation("getJointMappingForPort",
+    			&robotSim::getJointMappingForPort, this, RTT::ClientThread);
+
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
             boost::bind(&robotSim::WorldUpdateEnd, this));
+}
+
+std::map<std::string, int> robotSim::getJointMappingForPort(
+		std::string portName) {
+	std::map<std::string, int> result;
+	// find port in kinematic chain. Ports should be unique so no problem here!
+	for (std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it =
+			kinematic_chains.begin(); it != kinematic_chains.end(); it++) {
+		std::vector<RTT::base::PortInterface*> interface =
+				it->second->getAssociatedPorts();
+		std::vector<base::PortInterface*>::iterator iiter;
+
+		base::PortInterface* candidatePort = 0;
+
+		for (iiter = interface.begin(); iiter != interface.end(); ++iiter) {
+			if ((*iiter)->getName() == portName) {
+				candidatePort = *iiter;
+				break;
+			}
+		}
+
+		if (candidatePort) {
+			std::vector<std::string> jointNames = it->second->getJointNames();
+			// assuming we take the index as stored in the vector...
+			for (unsigned int i = 0; i < jointNames.size(); i++) {
+				result[jointNames[i]] = i;
+			}
+			return result;
+		}
+	}
+	return result;
 }
 
 std::string robotSim::printKinematicChainInformation(const std::string& kinematic_chain)
