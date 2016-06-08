@@ -22,6 +22,10 @@ KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<
         RTT::log(RTT::Info) << "    " << joint_names_[i] << RTT::endlog();
 }
 
+std::vector<RTT::base::PortInterface*> KinematicChain::getAssociatedPorts() {
+	return _inner_ports;
+}
+
 bool KinematicChain::initKinematicChain()
 {
     setJointNamesAndIndices();
@@ -86,31 +90,44 @@ std::string KinematicChain::getCurrentControlMode()
 bool KinematicChain::setFeedBack(const std::string &feedback_type)
 {
     if(feedback_type == FeedbackModes::positionFeedback){
-        position_feedback.reset(new position_fbk());
-        _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::positionFeedback, position_feedback->orocos_port).doc(
-                "Output for JointPosition-fbs from Gazebo to Orocos world.");
-        position_feedback->joint_feedback = JointAngles(_number_of_dofs);
-        position_feedback->joint_feedback.angles.setZero();
+    	position_feedback.reset(new position_fbk);
+		position_feedback->orocos_port.setName(_kinematic_chain_name+"_"+FeedbackModes::positionFeedback);
+		position_feedback->orocos_port.doc("Output for JointPosition-fbs from Gazebo to Orocos world.");
+		_ports.addPort(position_feedback->orocos_port);
+		// TODO needs to be solved better
+		_inner_ports.push_back(_ports.getPort(position_feedback->orocos_port.getName()));
 
-        position_feedback->orocos_port.setDataSample(position_feedback->joint_feedback);
+		position_feedback->joint_feedback = JointAngles(_number_of_dofs);
+		position_feedback->joint_feedback.angles.setZero();
+
+		position_feedback->orocos_port.setDataSample(position_feedback->joint_feedback);
+
     }
     else if(feedback_type == FeedbackModes::velocityFeedback){
-        velocity_feedback.reset(new velocity_fbk());
-        _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::velocityFeedback, velocity_feedback->orocos_port).doc(
-                "Output for JointVelocity-fbs from Gazebo to Orocos world.");
-        velocity_feedback->joint_feedback = JointVelocities(_number_of_dofs);
-        velocity_feedback->joint_feedback.velocities.setZero();
+    	velocity_feedback.reset(new velocity_fbk);
+		velocity_feedback->orocos_port.setName(_kinematic_chain_name+"_"+FeedbackModes::velocityFeedback);
+		velocity_feedback->orocos_port.doc("Output for JointVelocity-fbs from Gazebo to Orocos world.");
+		_ports.addPort(velocity_feedback->orocos_port);
+		// TODO needs to be solved better
+		_inner_ports.push_back(_ports.getPort(velocity_feedback->orocos_port.getName()));
 
-        velocity_feedback->orocos_port.setDataSample(velocity_feedback->joint_feedback);
+		velocity_feedback->joint_feedback = JointVelocities(_number_of_dofs);
+		velocity_feedback->joint_feedback.velocities.setZero();
+
+		velocity_feedback->orocos_port.setDataSample(velocity_feedback->joint_feedback);
     }
     else if(feedback_type == FeedbackModes::torqueFeedback){
-        torque_feedback.reset(new torque_fbk());
-        _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::torqueFeedback, torque_feedback->orocos_port).doc(
-                "Output for JointTorques-fbs from Gazebo to Orocos world.");
-        torque_feedback->joint_feedback = JointTorques(_number_of_dofs);
-        torque_feedback->joint_feedback.torques.setZero();
+    	torque_feedback.reset(new torque_fbk);
+		torque_feedback->orocos_port.setName(_kinematic_chain_name+"_"+FeedbackModes::torqueFeedback);
+		torque_feedback->orocos_port.doc("Output for JointTorques-fbs from Gazebo to Orocos world.");
+		_ports.addPort(torque_feedback->orocos_port);
+		// TODO needs to be solved better
+		_inner_ports.push_back(_ports.getPort(torque_feedback->orocos_port.getName()));
 
-        torque_feedback->orocos_port.setDataSample(torque_feedback->joint_feedback);
+		torque_feedback->joint_feedback = JointTorques(_number_of_dofs);
+		torque_feedback->joint_feedback.torques.setZero();
+
+		torque_feedback->orocos_port.setDataSample(torque_feedback->joint_feedback);
     }
     else{
         RTT::log(RTT::Error) << "Feedback Mode: " << feedback_type << " is not available!" << RTT::endlog();
@@ -121,30 +138,41 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
 bool KinematicChain::setController(const std::string& controller_type)
 {
     if(controller_type == ControlModes::JointPositionCtrl){
-        position_controller.reset(new position_ctrl());
-        _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointPositionCtrl, position_controller->orocos_port).doc(
-                "Input for JointPosition-cmds from Orocos to Gazebo world.");
+    	position_controller.reset(new position_ctrl);
+		position_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointPositionCtrl);
+		position_controller->orocos_port.doc("Input for JointPosition-cmds from Orocos to Gazebo world.");
+		_ports.addPort(position_controller->orocos_port);
+		// TODO needs to be solved better
+		_inner_ports.push_back(_ports.getPort(position_controller->orocos_port.getName()));
 
-        position_controller->joint_cmd = JointAngles(_number_of_dofs);
-        position_controller->joint_cmd.angles.setZero();
+		position_controller->joint_cmd = JointAngles(_number_of_dofs);
+		position_controller->joint_cmd.angles.setZero();
 
-        _gazebo_position_joint_controller.reset(new gazebo::physics::JointController(_model));
+		_gazebo_position_joint_controller.reset(new gazebo::physics::JointController(_model));
     }
     else if(controller_type == ControlModes::JointImpedanceCtrl){
-        impedance_controller.reset(new impedance_ctrl());
-        _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointImpedanceCtrl, impedance_controller->orocos_port).doc(
-                "Input for JointImpedance-cmds from Orocos to Gazebo world.");
-        impedance_controller->joint_cmd = JointImpedance(_number_of_dofs);
-        impedance_controller->joint_cmd.stiffness.setZero();
-        impedance_controller->joint_cmd.damping.setZero();
+    	impedance_controller.reset(new impedance_ctrl);
+		impedance_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointImpedanceCtrl);
+		impedance_controller->orocos_port.doc("Input for JointImpedance-cmds from Orocos to Gazebo world.");
+		_ports.addPort(impedance_controller->orocos_port);
+		// TODO needs to be solved better
+		_inner_ports.push_back(_ports.getPort(impedance_controller->orocos_port.getName()));
+
+		impedance_controller->joint_cmd = JointImpedance(_number_of_dofs);
+		impedance_controller->joint_cmd.stiffness.setZero();
+		impedance_controller->joint_cmd.damping.setZero();
     }
     else if(controller_type == ControlModes::JointTorqueCtrl)
     {
-        torque_controller.reset(new torque_ctrl());
-        _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointTorqueCtrl, torque_controller->orocos_port).doc(
-                "Input for JointTorque-cmds from Orocos to Gazebo world.");
-        torque_controller->joint_cmd = JointTorques(_number_of_dofs);
-        torque_controller->joint_cmd.torques.setZero();
+    	torque_controller.reset(new torque_ctrl);
+		torque_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointTorqueCtrl);
+		torque_controller->orocos_port.doc("Input for JointTorque-cmds from Orocos to Gazebo world.");
+		_ports.addPort(torque_controller->orocos_port);
+		// TODO needs to be solved better
+		_inner_ports.push_back(_ports.getPort(torque_controller->orocos_port.getName()));
+
+		torque_controller->joint_cmd = JointTorques(_number_of_dofs);
+		torque_controller->joint_cmd.torques.setZero();
     }
     else{
         RTT::log(RTT::Error) << "Control Mode: " << controller_type << " is not available!" << RTT::endlog();
