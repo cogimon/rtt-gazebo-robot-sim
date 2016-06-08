@@ -12,6 +12,7 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 
+
 using namespace rstrt::kinematics;
 using namespace rstrt::dynamics;
 
@@ -60,6 +61,7 @@ private:
     gazebo::physics::ModelPtr _model;
     std::string _current_control_mode;
     gazebo::physics::JointControllerPtr _gazebo_position_joint_controller;
+    std::vector<std::string> _joint_names;
     std::map<std::string, std::string> _map_joint_name_scoped_name;
 
     bool setController(const std::string& controller_type);
@@ -68,8 +70,7 @@ private:
     bool initGazeboJointController();
     std::vector<std::string> getJointScopedNames();
     void setInitialPosition();
-
-
+    void setInitialImpedance();
 
 };
 

@@ -38,7 +38,6 @@ namespace cogimon {
     template <class T> class jointFeedback {
     public:
         jointFeedback() {
-
         }
 
         ~jointFeedback() {
