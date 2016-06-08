@@ -8,7 +8,8 @@ KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<
     _kinematic_chain_name(chain_name),
     _ports(ports),
     _model(model),
-    _current_control_mode(std::string(ControlModes::JointPositionCtrl))
+    _current_control_mode(std::string(ControlModes::JointPositionCtrl)),
+    _joint_names(joint_names)
 {
     RTT::log(RTT::Info) << "Creating Kinematic Chain " << chain_name << RTT::endlog();
 
@@ -45,25 +46,21 @@ bool KinematicChain::initKinematicChain()
         return false;
     }
     setInitialPosition();
+    setInitialImpedance();
     return true;
 }
 
 std::vector<std::string> KinematicChain::getJointScopedNames()
 {
-    std::map<std::string, std::string>::iterator it;
     std::vector<std::string> joint_names;
-    for(it = _map_joint_name_scoped_name.begin(); it != _map_joint_name_scoped_name.end(); it++)
-        joint_names.push_back(it->second);
+    for(unsigned int i = 0; i < _joint_names.size(); ++i)
+        joint_names.push_back(_map_joint_name_scoped_name[_joint_names[i]]);
     return joint_names;
 }
 
 std::vector<std::string> KinematicChain::getJointNames()
 {
-    std::map<std::string, std::string>::iterator it;
-    std::vector<std::string> joint_names;
-    for(it = _map_joint_name_scoped_name.begin(); it != _map_joint_name_scoped_name.end(); it++)
-        joint_names.push_back(it->first);
-    return joint_names;
+    return _joint_names;
 }
 
 std::vector<std::string> KinematicChain::getControllersAvailable()
@@ -89,7 +86,7 @@ std::string KinematicChain::getCurrentControlMode()
 bool KinematicChain::setFeedBack(const std::string &feedback_type)
 {
     if(feedback_type == FeedbackModes::positionFeedback){
-        position_feedback.reset(new position_fbk);
+        position_feedback.reset(new position_fbk());
         _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::positionFeedback, position_feedback->orocos_port).doc(
                 "Output for JointPosition-fbs from Gazebo to Orocos world.");
         position_feedback->joint_feedback = JointAngles(_number_of_dofs);
@@ -98,7 +95,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
         position_feedback->orocos_port.setDataSample(position_feedback->joint_feedback);
     }
     else if(feedback_type == FeedbackModes::velocityFeedback){
-        velocity_feedback.reset(new velocity_fbk);
+        velocity_feedback.reset(new velocity_fbk());
         _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::velocityFeedback, velocity_feedback->orocos_port).doc(
                 "Output for JointVelocity-fbs from Gazebo to Orocos world.");
         velocity_feedback->joint_feedback = JointVelocities(_number_of_dofs);
@@ -107,7 +104,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
         velocity_feedback->orocos_port.setDataSample(velocity_feedback->joint_feedback);
     }
     else if(feedback_type == FeedbackModes::torqueFeedback){
-        torque_feedback.reset(new torque_fbk);
+        torque_feedback.reset(new torque_fbk());
         _ports.addPort(_kinematic_chain_name+"_"+FeedbackModes::torqueFeedback, torque_feedback->orocos_port).doc(
                 "Output for JointTorques-fbs from Gazebo to Orocos world.");
         torque_feedback->joint_feedback = JointTorques(_number_of_dofs);
@@ -124,7 +121,7 @@ bool KinematicChain::setFeedBack(const std::string &feedback_type)
 bool KinematicChain::setController(const std::string& controller_type)
 {
     if(controller_type == ControlModes::JointPositionCtrl){
-        position_controller.reset(new position_ctrl);
+        position_controller.reset(new position_ctrl());
         _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointPositionCtrl, position_controller->orocos_port).doc(
                 "Input for JointPosition-cmds from Orocos to Gazebo world.");
 
@@ -134,7 +131,7 @@ bool KinematicChain::setController(const std::string& controller_type)
         _gazebo_position_joint_controller.reset(new gazebo::physics::JointController(_model));
     }
     else if(controller_type == ControlModes::JointImpedanceCtrl){
-        impedance_controller.reset(new impedance_ctrl);
+        impedance_controller.reset(new impedance_ctrl());
         _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointImpedanceCtrl, impedance_controller->orocos_port).doc(
                 "Input for JointImpedance-cmds from Orocos to Gazebo world.");
         impedance_controller->joint_cmd = JointImpedance(_number_of_dofs);
@@ -143,7 +140,7 @@ bool KinematicChain::setController(const std::string& controller_type)
     }
     else if(controller_type == ControlModes::JointTorqueCtrl)
     {
-        torque_controller.reset(new torque_ctrl);
+        torque_controller.reset(new torque_ctrl());
         _ports.addPort(_kinematic_chain_name+"_"+ControlModes::JointTorqueCtrl, torque_controller->orocos_port).doc(
                 "Input for JointTorque-cmds from Orocos to Gazebo world.");
         torque_controller->joint_cmd = JointTorques(_number_of_dofs);
@@ -196,6 +193,17 @@ void KinematicChain::setInitialPosition()
     for(unsigned int i = 0; i < joint_names.size(); ++i)
         position_controller->joint_cmd.angles[i] = _model->GetJoint(joint_names[i])->GetAngle(0).Radian();
     position_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
+}
+
+void KinematicChain::setInitialImpedance()
+{
+    hardcoded_impedance impedance_init;
+    std::vector<std::string> joint_names = getJointNames();
+    for(unsigned int i = 0; i < joint_names.size(); ++i){
+        impedance_controller->joint_cmd.stiffness[i] = impedance_init.impedance[joint_names[i]].first;
+        impedance_controller->joint_cmd.damping[i] = impedance_init.impedance[joint_names[i]].second;
+    }
+    impedance_controller->joint_cmd_fs == RTT::FlowStatus::NewData;
 }
 
 bool KinematicChain::setControlMode(const std::string &controlMode)
@@ -263,12 +271,17 @@ void KinematicChain::getCommand()
     if(_current_control_mode == ControlModes::JointTorqueCtrl)
         torque_controller->joint_cmd_fs = torque_controller->orocos_port.readNewest(
                     torque_controller->joint_cmd);
-    if(_current_control_mode == ControlModes::JointPositionCtrl || _current_control_mode == ControlModes::JointImpedanceCtrl)
+    else if(_current_control_mode == ControlModes::JointPositionCtrl)
         position_controller->joint_cmd_fs = position_controller->orocos_port.readNewest(
                     position_controller->joint_cmd);
-    if(_current_control_mode == ControlModes::JointPositionCtrl)
+    else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
+        position_controller->joint_cmd_fs = position_controller->orocos_port.readNewest(
+                    position_controller->joint_cmd);
         impedance_controller->joint_cmd_fs = impedance_controller->orocos_port.readNewest(
                     impedance_controller->joint_cmd);
+        torque_controller->joint_cmd_fs = torque_controller->orocos_port.readNewest(
+                    torque_controller->joint_cmd);
+    }
 }
 
 void KinematicChain::move()
@@ -285,7 +298,20 @@ void KinematicChain::move()
             _model->GetJoint(joint_names[i])->SetForce(0, torque_controller->joint_cmd.torques(i));
     }
     else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
-        ///TODO
+        std::vector<std::string> joint_names = getJointNames();
+        std::cout<"tau: [";
+        for(unsigned int i = 0; i < joint_names.size(); ++i){
+            double q = position_feedback->joint_feedback.angles[i];
+            double qd = position_controller->joint_cmd.angles[i];
+            double Kd = impedance_controller->joint_cmd.stiffness[i];
+            double qdot = velocity_feedback->joint_feedback.velocities[i];
+            double Dd = impedance_controller->joint_cmd.damping[i];
+            double tauoff = torque_controller->joint_cmd.torques[i];
+            double tau = -Kd*(q-qd)-Dd*qdot+tauoff;
+            std::cout<<tau<<" ";
+            _model->GetJoint(joint_names[i])->SetForce(0, tau);
+        }
+        std::cout<<"]"<<std::endl; std::cout<<std::endl;
     }
 }
 
