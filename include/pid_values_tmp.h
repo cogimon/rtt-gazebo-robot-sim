@@ -107,43 +107,43 @@ class hardcoded_impedance {
 public:
     hardcoded_impedance() {
         //Torso
-        impedance["WaistLat"] = std::pair<double, double>(800., 0.1);
-        impedance["WaistSag"] = std::pair<double, double>(800., 0.1);
-        impedance["WaistYaw"] = std::pair<double, double>(800., 0.1);
+        impedance["WaistLat"] = std::pair<double, double>(800., 30.);
+        impedance["WaistSag"] = std::pair<double, double>(800., 30.);
+        impedance["WaistYaw"] = std::pair<double, double>(800., 30.);
 
         //RLeg
-        impedance["RHipSag"] = std::pair<double, double>(300., 0.1);
-        impedance["RHipLat"] = std::pair<double, double>(500., 0.1);
-        impedance["RHipYaw"] = std::pair<double, double>(300., 0.1);
-        impedance["RKneeSag"] = std::pair<double, double>(300., 0.1);
-        impedance["RAnkLat"] = std::pair<double, double>(400., 0.1);
-        impedance["RAnkSag"] = std::pair<double, double>(300., 0.1);
+        impedance["RHipSag"] = std::pair<double, double>(1000., 100.);
+        impedance["RHipLat"] = std::pair<double, double>(1000., 100.);
+        impedance["RHipYaw"] = std::pair<double, double>(1000., 100.);
+        impedance["RKneeSag"] = std::pair<double, double>(1000., 100.);
+        impedance["RAnkLat"] = std::pair<double, double>(1000., 100.);
+        impedance["RAnkSag"] = std::pair<double, double>(1000., 100.);
 
         //LLeg
-        impedance["LHipSag"] = std::pair<double, double>(300., 0.1);
-        impedance["LHipLat"] = std::pair<double, double>(500., 0.1);
-        impedance["LHipYaw"] = std::pair<double, double>(300., 0.1);
-        impedance["LKneeSag"] = std::pair<double, double>(300., 0.1);
-        impedance["LAnkLat"] = std::pair<double, double>(400., 0.1);
-        impedance["LAnkSag"] = std::pair<double, double>(300., 0.1);
+        impedance["LHipSag"] = std::pair<double, double>(1000., 100.);
+        impedance["LHipLat"] = std::pair<double, double>(1000., 100.);
+        impedance["LHipYaw"] = std::pair<double, double>(1000., 100.);
+        impedance["LKneeSag"] = std::pair<double, double>(1000., 100.);
+        impedance["LAnkLat"] = std::pair<double, double>(1000., 100.);
+        impedance["LAnkSag"] = std::pair<double, double>(1000., 100.);
 
         //RArm
-        impedance["RShSag"] = std::pair<double, double>(700., 10.);
-        impedance["RShLat"] = std::pair<double, double>(700., 10.);
-        impedance["RShYaw"] = std::pair<double, double>(500., 10.);
-        impedance["RElbj"] = std::pair<double, double>(700., 10.);
-        impedance["RForearmPlate"] = std::pair<double, double>(70., 1.);
-        impedance["RWrj1"] = std::pair<double, double>(70., 1.);
-        impedance["RWrj2"] = std::pair<double, double>(7., 0.1);
+        impedance["RShSag"] = std::pair<double, double>(500., 20.);
+        impedance["RShLat"] = std::pair<double, double>(500., 20.);
+        impedance["RShYaw"] = std::pair<double, double>(250., 10.);
+        impedance["RElbj"] = std::pair<double, double>(500., 20.);
+        impedance["RForearmPlate"] = std::pair<double, double>(100., 5.);
+        impedance["RWrj1"] = std::pair<double, double>(100., 5.);
+        impedance["RWrj2"] = std::pair<double, double>(100., 5.);
 
         //LArm
         impedance["LShSag"] = std::pair<double, double>(500., 20.);
-        impedance["LShLat"] = std::pair<double, double>(0., 0.);
-        impedance["LShYaw"] = std::pair<double, double>(0., 0.);
-        impedance["LElbj"] = std::pair<double, double>(0., 0.);
-        impedance["LForearmPlate"] = std::pair<double, double>(0., 0.);
-        impedance["LWrj1"] = std::pair<double, double>(0., 0.);
-        impedance["LWrj2"] = std::pair<double, double>(0., .0);
+        impedance["LShLat"] = std::pair<double, double>(500., 20.);
+        impedance["LShYaw"] = std::pair<double, double>(250., 10.);
+        impedance["LElbj"] = std::pair<double, double>(500., 20.);
+        impedance["LForearmPlate"] = std::pair<double, double>(100., 5.);
+        impedance["LWrj1"] = std::pair<double, double>(100., 5.);
+        impedance["LWrj2"] = std::pair<double, double>(100., 5.);
     }
 
     /**
