@@ -327,7 +327,6 @@ void KinematicChain::move()
     }
     else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
         std::vector<std::string> joint_names = getJointNames();
-        std::cout<"tau: [";
         for(unsigned int i = 0; i < joint_names.size(); ++i){
             double q = position_feedback->joint_feedback.angles[i];
             double qd = position_controller->joint_cmd.angles[i];
@@ -336,10 +335,8 @@ void KinematicChain::move()
             double Dd = impedance_controller->joint_cmd.damping[i];
             double tauoff = torque_controller->joint_cmd.torques[i];
             double tau = -Kd*(q-qd)-Dd*qdot+tauoff;
-            std::cout<<tau<<" ";
             _model->GetJoint(joint_names[i])->SetForce(0, tau);
         }
-        std::cout<<"]"<<std::endl; std::cout<<std::endl;
     }
 }
 
