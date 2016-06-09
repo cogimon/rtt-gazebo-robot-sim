@@ -37,12 +37,7 @@ bool KinematicChain::initKinematicChain()
     if(!setController(std::string(ControlModes::JointTorqueCtrl)))
         return false;
 
-    if(!setFeedBack(std::string(FeedbackModes::positionFeedback)))
-        return false;
-    if(!setFeedBack(std::string(FeedbackModes::velocityFeedback)))
-        return false;
-    if(!setFeedBack(std::string(FeedbackModes::torqueFeedback)))
-        return false;
+    setFeedBack();
 
     if(!initGazeboJointController()){
         RTT::log(RTT::Error) << "Joint Controller can NOT be initialized, exiting" << RTT::endlog();
@@ -86,52 +81,17 @@ std::string KinematicChain::getCurrentControlMode()
     return _current_control_mode;
 }
 
-bool KinematicChain::setFeedBack(const std::string &feedback_type)
+void KinematicChain::setFeedBack()
 {
-    if(feedback_type == FeedbackModes::positionFeedback){
-    	position_feedback.reset(new position_fbk);
-		position_feedback->orocos_port.setName(_kinematic_chain_name+"_"+FeedbackModes::positionFeedback);
-		position_feedback->orocos_port.doc("Output for JointPosition-fbs from Gazebo to Orocos world.");
-		_ports.addPort(position_feedback->orocos_port);
+		full_feedback.reset(new full_fbk);
+		full_feedback->orocos_port.setName(_kinematic_chain_name+"_JointFeedback");
+		full_feedback->orocos_port.doc("Output for Joint-fb from Gazebo to Orocos world. Contains joint-position, -velocity and -torque.");
+		_ports.addPort(full_feedback->orocos_port);
 		// TODO needs to be solved better
-		_inner_ports.push_back(_ports.getPort(position_feedback->orocos_port.getName()));
+		_inner_ports.push_back(_ports.getPort(full_feedback->orocos_port.getName()));
 
-		position_feedback->joint_feedback = JointAngles(_number_of_dofs);
-		position_feedback->joint_feedback.angles.setZero();
-
-		position_feedback->orocos_port.setDataSample(position_feedback->joint_feedback);
-
-    }
-    else if(feedback_type == FeedbackModes::velocityFeedback){
-    	velocity_feedback.reset(new velocity_fbk);
-		velocity_feedback->orocos_port.setName(_kinematic_chain_name+"_"+FeedbackModes::velocityFeedback);
-		velocity_feedback->orocos_port.doc("Output for JointVelocity-fbs from Gazebo to Orocos world.");
-		_ports.addPort(velocity_feedback->orocos_port);
-		// TODO needs to be solved better
-		_inner_ports.push_back(_ports.getPort(velocity_feedback->orocos_port.getName()));
-
-		velocity_feedback->joint_feedback = JointVelocities(_number_of_dofs);
-		velocity_feedback->joint_feedback.velocities.setZero();
-
-		velocity_feedback->orocos_port.setDataSample(velocity_feedback->joint_feedback);
-    }
-    else if(feedback_type == FeedbackModes::torqueFeedback){
-    	torque_feedback.reset(new torque_fbk);
-		torque_feedback->orocos_port.setName(_kinematic_chain_name+"_"+FeedbackModes::torqueFeedback);
-		torque_feedback->orocos_port.doc("Output for JointTorques-fbs from Gazebo to Orocos world.");
-		_ports.addPort(torque_feedback->orocos_port);
-		// TODO needs to be solved better
-		_inner_ports.push_back(_ports.getPort(torque_feedback->orocos_port.getName()));
-
-		torque_feedback->joint_feedback = JointTorques(_number_of_dofs);
-		torque_feedback->joint_feedback.torques.setZero();
-
-		torque_feedback->orocos_port.setDataSample(torque_feedback->joint_feedback);
-    }
-    else{
-        RTT::log(RTT::Error) << "Feedback Mode: " << feedback_type << " is not available!" << RTT::endlog();
-        return false;}
-    return true;
+		full_feedback->joint_feedback = JointState(_number_of_dofs);
+		full_feedback->orocos_port.setDataSample(full_feedback->joint_feedback);
 }
 
 bool KinematicChain::setController(const std::string& controller_type)
@@ -260,33 +220,26 @@ bool KinematicChain::setControlMode(const std::string &controlMode)
 
 void KinematicChain::sense()
 {
-    if(position_feedback){
-        for(unsigned int i = 0; i < _number_of_dofs; ++i)
-            position_feedback->joint_feedback.angles(i) =
-                _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
+	if (full_feedback) {
+		for (unsigned int i = 0; i < _number_of_dofs; ++i)
+			full_feedback->joint_feedback.angles(i) = _model->GetJoint(
+					_joint_names[i])->GetAngle(0).Radian();
 
-        if (position_feedback->orocos_port.connected())
-            position_feedback->orocos_port.write(position_feedback->joint_feedback);
-    }
-    if(velocity_feedback){
-        for(unsigned int i = 0; i < _number_of_dofs; ++i)
-            velocity_feedback->joint_feedback.velocities(i) =
-                _model->GetJoint(_joint_names[i])->GetVelocity(0);
+		for (unsigned int i = 0; i < _number_of_dofs; ++i)
+			full_feedback->joint_feedback.velocities(i) = _model->GetJoint(
+					_joint_names[i])->GetVelocity(0);
 
-        if (velocity_feedback->orocos_port.connected())
-            velocity_feedback->orocos_port.write(velocity_feedback->joint_feedback);
-    }
-    if(torque_feedback){
-        for(unsigned int i = 0; i < _number_of_dofs; ++i){
-            gazebo::physics::JointWrench w =
-                    _model->GetJoint(_joint_names[i])->GetForceTorque(0u);
-            gazebo::math::Vector3 a = _model->GetJoint(_joint_names[i])->GetLocalAxis(0u);
-            torque_feedback->joint_feedback.torques(i) = a.Dot(w.body1Torque);
-        }
+		for (unsigned int i = 0; i < _number_of_dofs; ++i) {
+			gazebo::physics::JointWrench w =
+					_model->GetJoint(_joint_names[i])->GetForceTorque(0u);
+			gazebo::math::Vector3 a =
+					_model->GetJoint(_joint_names[i])->GetLocalAxis(0u);
+			full_feedback->joint_feedback.torques(i) = a.Dot(w.body1Torque);
+		}
 
-        if (torque_feedback->orocos_port.connected())
-            torque_feedback->orocos_port.write(torque_feedback->joint_feedback);
-    }
+		if (full_feedback->orocos_port.connected())
+			full_feedback->orocos_port.write(full_feedback->joint_feedback);
+	}
 }
 
 void KinematicChain::getCommand()
@@ -321,10 +274,10 @@ void KinematicChain::move()
     }
     else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
         for(unsigned int i = 0; i < _joint_names.size(); ++i){
-            double q = position_feedback->joint_feedback.angles[i];
+            double q = full_feedback->joint_feedback.angles[i];
             double qd = position_controller->joint_cmd.angles[i];
             double Kd = impedance_controller->joint_cmd.stiffness[i];
-            double qdot = velocity_feedback->joint_feedback.velocities[i];
+            double qdot = full_feedback->joint_feedback.velocities[i];
             double Dd = impedance_controller->joint_cmd.damping[i];
             double tauoff = torque_controller->joint_cmd.torques[i];
             double tau = -Kd*(q-qd)-Dd*qdot+tauoff;

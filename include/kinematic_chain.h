@@ -6,6 +6,7 @@
 #include <rst-rt/kinematics/JointVelocities.hpp>
 #include <rst-rt/dynamics/JointTorques.hpp>
 #include <rst-rt/dynamics/JointImpedance.hpp>
+#include <rst-rt/robot/JointState.hpp>
 
 #include <control_modes.h>
 #include <gazebo/gazebo.hh>
@@ -15,15 +16,14 @@
 
 using namespace rstrt::kinematics;
 using namespace rstrt::dynamics;
+using namespace rstrt::robot;
 
 
 typedef cogimon::jointCtrl<JointAngles> position_ctrl;
 typedef cogimon::jointCtrl<JointImpedance> impedance_ctrl;
 typedef cogimon::jointCtrl<JointTorques> torque_ctrl;
 
-typedef cogimon::jointFeedback<JointAngles> position_fbk;
-typedef cogimon::jointFeedback<JointVelocities> velocity_fbk;
-typedef cogimon::jointFeedback<JointTorques> torque_fbk;
+typedef cogimon::jointFeedback<JointState> full_fbk;
 
 
 class KinematicChain {
@@ -50,9 +50,7 @@ public:
     boost::shared_ptr<impedance_ctrl> impedance_controller;
     boost::shared_ptr<torque_ctrl> torque_controller;
 
-    boost::shared_ptr<position_fbk> position_feedback;
-    boost::shared_ptr<velocity_fbk> velocity_feedback;
-    boost::shared_ptr<torque_fbk> torque_feedback;
+    boost::shared_ptr<full_fbk> full_feedback;
 
 private:
     std::string _kinematic_chain_name;
@@ -69,7 +67,7 @@ private:
     std::map<std::string, std::string> _map_joint_name_scoped_name;
 
     bool setController(const std::string& controller_type);
-    bool setFeedBack(const std::string& feedback_type);
+    void setFeedBack();
     bool setJointNamesAndIndices();
     bool initGazeboJointController();
     std::vector<std::string> getJointScopedNames();
