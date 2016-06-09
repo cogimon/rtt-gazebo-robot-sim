@@ -107,7 +107,7 @@ std::vector<std::string> robotSim::getControlAvailableMode(const std::string& ki
         log(Warning) << "Kinematic Chain " << kinematic_chain << " is not available!" << endlog();
         control_modes.push_back("");}
     else
-        kinematic_chains[kinematic_chain]->getControllersAvailable();
+        control_modes = kinematic_chains[kinematic_chain]->getControllersAvailable();
     return control_modes;
 }
 
