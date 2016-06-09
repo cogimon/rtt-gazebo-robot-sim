@@ -32,6 +32,12 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("printKinematicChainInformation", &robotSim::printKinematicChainInformation,
                 this, RTT::ClientThread);
 
+    this->addOperation("getControlMode", &robotSim::getControlMode,
+                this, RTT::ClientThread);
+
+    this->addOperation("getAvailableControlMode", &robotSim::getControlAvailableMode,
+                this, RTT::ClientThread);
+
     this->provides("joint_info")->addOperation("getJointMappingForPort",
     			&robotSim::getJointMappingForPort, this, RTT::ClientThread);
 
