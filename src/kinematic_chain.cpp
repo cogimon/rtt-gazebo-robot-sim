@@ -13,13 +13,12 @@ KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<
 {
     RTT::log(RTT::Info) << "Creating Kinematic Chain " << chain_name << RTT::endlog();
 
-    for(unsigned int i = 0; i < joint_names.size(); ++i)
-        _map_joint_name_scoped_name.insert(std::pair<std::string, std::string>(joint_names[i], " "));
+    for(unsigned int i = 0; i < _joint_names.size(); ++i)
+        _map_joint_name_scoped_name.insert(std::pair<std::string, std::string>(_joint_names[i], " "));
 
-    std::vector<std::string> joint_names_ = getJointNames();
     RTT::log(RTT::Info) << "Joints: " << RTT::endlog();
-    for(unsigned int i = 0; i < joint_names_.size(); ++i)
-        RTT::log(RTT::Info) << "    " << joint_names_[i] << RTT::endlog();
+    for(unsigned int i = 0; i < _joint_names.size(); ++i)
+        RTT::log(RTT::Info) << "    " << _joint_names[i] << RTT::endlog();
 }
 
 std::vector<RTT::base::PortInterface*> KinematicChain::getAssociatedPorts() {
@@ -200,14 +199,13 @@ bool KinematicChain::setJointNamesAndIndices()
 
 bool KinematicChain::initGazeboJointController()
 {
-    std::vector<std::string> joint_names = getJointNames();
-    for(unsigned int i = 0; i < joint_names.size(); ++i)
-            _gazebo_position_joint_controller->AddJoint(_model->GetJoint(joint_names[i]));
+    for(unsigned int i = 0; i < _joint_names.size(); ++i)
+            _gazebo_position_joint_controller->AddJoint(_model->GetJoint(_joint_names[i]));
 
     hardcoded_pids PID;
     std::vector<std::string> joint_scoped_names = getJointScopedNames();
     for(unsigned int i = 0; i < joint_scoped_names.size(); ++i)
-        _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], PID.pids[joint_names[i]]);
+        _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], PID.pids[_joint_names[i]]);
 
     return true;
 }
@@ -217,19 +215,17 @@ void KinematicChain::setInitialPosition()
     ///TODO: check if user initial config is set when it is used in the gazebo configure hook
 
     position_controller->orocos_port.clear();
-    std::vector<std::string> joint_names = getJointNames();
-    for(unsigned int i = 0; i < joint_names.size(); ++i)
-        position_controller->joint_cmd.angles[i] = _model->GetJoint(joint_names[i])->GetAngle(0).Radian();
+    for(unsigned int i = 0; i < _joint_names.size(); ++i)
+        position_controller->joint_cmd.angles[i] = _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
     position_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
 }
 
 void KinematicChain::setInitialImpedance()
 {
     hardcoded_impedance impedance_init;
-    std::vector<std::string> joint_names = getJointNames();
-    for(unsigned int i = 0; i < joint_names.size(); ++i){
-        impedance_controller->joint_cmd.stiffness[i] = impedance_init.impedance[joint_names[i]].first;
-        impedance_controller->joint_cmd.damping[i] = impedance_init.impedance[joint_names[i]].second;
+    for(unsigned int i = 0; i < _joint_names.size(); ++i){
+        impedance_controller->joint_cmd.stiffness[i] = impedance_init.impedance[_joint_names[i]].first;
+        impedance_controller->joint_cmd.damping[i] = impedance_init.impedance[_joint_names[i]].second;
     }
     impedance_controller->joint_cmd_fs == RTT::FlowStatus::NewData;
 }
@@ -264,11 +260,10 @@ bool KinematicChain::setControlMode(const std::string &controlMode)
 
 void KinematicChain::sense()
 {
-    std::vector<std::string> joint_names = getJointNames();
     if(position_feedback){
         for(unsigned int i = 0; i < _number_of_dofs; ++i)
             position_feedback->joint_feedback.angles(i) =
-                _model->GetJoint(joint_names[i])->GetAngle(0).Radian();
+                _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
 
         if (position_feedback->orocos_port.connected())
             position_feedback->orocos_port.write(position_feedback->joint_feedback);
@@ -276,7 +271,7 @@ void KinematicChain::sense()
     if(velocity_feedback){
         for(unsigned int i = 0; i < _number_of_dofs; ++i)
             velocity_feedback->joint_feedback.velocities(i) =
-                _model->GetJoint(joint_names[i])->GetVelocity(0);
+                _model->GetJoint(_joint_names[i])->GetVelocity(0);
 
         if (velocity_feedback->orocos_port.connected())
             velocity_feedback->orocos_port.write(velocity_feedback->joint_feedback);
@@ -284,8 +279,8 @@ void KinematicChain::sense()
     if(torque_feedback){
         for(unsigned int i = 0; i < _number_of_dofs; ++i){
             gazebo::physics::JointWrench w =
-                    _model->GetJoint(joint_names[i])->GetForceTorque(0u);
-            gazebo::math::Vector3 a = _model->GetJoint(joint_names[i])->GetLocalAxis(0u);
+                    _model->GetJoint(_joint_names[i])->GetForceTorque(0u);
+            gazebo::math::Vector3 a = _model->GetJoint(_joint_names[i])->GetLocalAxis(0u);
             torque_feedback->joint_feedback.torques(i) = a.Dot(w.body1Torque);
         }
 
@@ -321,13 +316,11 @@ void KinematicChain::move()
         _gazebo_position_joint_controller->Update();
     }
     else if(_current_control_mode == ControlModes::JointTorqueCtrl){
-        std::vector<std::string> joint_names = getJointNames();
-        for(unsigned int i = 0; i < joint_names.size(); ++i)
-            _model->GetJoint(joint_names[i])->SetForce(0, torque_controller->joint_cmd.torques(i));
+        for(unsigned int i = 0; i < _joint_names.size(); ++i)
+            _model->GetJoint(_joint_names[i])->SetForce(0, torque_controller->joint_cmd.torques(i));
     }
     else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
-        std::vector<std::string> joint_names = getJointNames();
-        for(unsigned int i = 0; i < joint_names.size(); ++i){
+        for(unsigned int i = 0; i < _joint_names.size(); ++i){
             double q = position_feedback->joint_feedback.angles[i];
             double qd = position_controller->joint_cmd.angles[i];
             double Kd = impedance_controller->joint_cmd.stiffness[i];
@@ -335,17 +328,16 @@ void KinematicChain::move()
             double Dd = impedance_controller->joint_cmd.damping[i];
             double tauoff = torque_controller->joint_cmd.torques[i];
             double tau = -Kd*(q-qd)-Dd*qdot+tauoff;
-            _model->GetJoint(joint_names[i])->SetForce(0, tau);
+            _model->GetJoint(_joint_names[i])->SetForce(0, tau);
         }
     }
 }
 
 std::string KinematicChain::printKinematicChainInformation()
 {
-    std::vector<std::string> joint_names = getJointNames();
     std::stringstream joint_names_stream;
-    for(unsigned int i = 0; i < joint_names.size(); ++i)
-        joint_names_stream << joint_names[i] << " ";
+    for(unsigned int i = 0; i < _joint_names.size(); ++i)
+        joint_names_stream << _joint_names[i] << " ";
 
     std::vector<std::string> controller_names = getControllersAvailable();
     std::stringstream controller_names_stream;
