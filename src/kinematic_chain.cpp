@@ -187,7 +187,7 @@ void KinematicChain::setInitialImpedance()
         impedance_controller->joint_cmd.stiffness[i] = impedance_init.impedance[_joint_names[i]].first;
         impedance_controller->joint_cmd.damping[i] = impedance_init.impedance[_joint_names[i]].second;
     }
-    impedance_controller->joint_cmd_fs == RTT::FlowStatus::NewData;
+    impedance_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
 }
 
 bool KinematicChain::setControlMode(const std::string &controlMode)
