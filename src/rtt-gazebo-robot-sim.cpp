@@ -4,6 +4,7 @@
 #include <fstream>
 #include <streambuf>
 
+
 #include "pid_values_tmp.h"
 
 using namespace cogimon;
@@ -47,18 +48,17 @@ robotSim::robotSim(const std::string &name):
             boost::bind(&robotSim::WorldUpdateEnd, this));
 }
 
-std::map<std::string, int> robotSim::getJointMappingForPort(
-		std::string portName) {
-	std::map<std::string, int> result;
+std::vector<std::pair<std::string, int>> robotSim::getJointMappingForPort(std::string portName)
+{
+    std::vector<std::pair<std::string, int>> result;
 	// find port in kinematic chain. Ports should be unique so no problem here!
 	for (std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it =
-			kinematic_chains.begin(); it != kinematic_chains.end(); it++) {
-		std::vector<RTT::base::PortInterface*> interface =
-				it->second->getAssociatedPorts();
-		std::vector<base::PortInterface*>::iterator iiter;
+            kinematic_chains.begin(); it != kinematic_chains.end(); it++)
+    {
+        std::vector<RTT::base::PortInterface*> interface = it->second->getAssociatedPorts();
 
 		base::PortInterface* candidatePort = 0;
-
+        std::vector<base::PortInterface*>::iterator iiter;
 		for (iiter = interface.begin(); iiter != interface.end(); ++iiter) {
 			if ((*iiter)->getName() == portName) {
 				candidatePort = *iiter;
@@ -66,11 +66,15 @@ std::map<std::string, int> robotSim::getJointMappingForPort(
 			}
 		}
 
-		if (candidatePort) {
+        if (candidatePort)
+        {
 			std::vector<std::string> jointNames = it->second->getJointNames();
 			// assuming we take the index as stored in the vector...
 			for (unsigned int i = 0; i < jointNames.size(); i++) {
-				result[jointNames[i]] = i;
+                std::pair<std::string, int> p;
+                p.first = jointNames[i];
+                p.second = i;
+                result.push_back(p);
 			}
 			return result;
 		}

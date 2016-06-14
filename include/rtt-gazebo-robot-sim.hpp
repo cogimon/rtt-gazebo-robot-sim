@@ -27,6 +27,7 @@
 #include <control_modes.h>
 #include <kinematic_chain.h>
 #include <boost/shared_ptr.hpp>
+#include <unordered_map>
 
 namespace cogimon {
 
@@ -55,7 +56,7 @@ protected:
      * If there isn't such an port (portName) existing, or used in an kinematic chain,
      * the call will return an empty map. Otherwise it will contain the mapping.
      */
-    std::map<std::string, int> getJointMappingForPort(std::string portName);
+    std::vector<std::pair<std::string, int>> getJointMappingForPort(std::string portName);
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
