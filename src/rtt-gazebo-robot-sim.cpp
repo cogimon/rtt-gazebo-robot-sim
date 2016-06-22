@@ -13,7 +13,8 @@ using namespace Eigen;
 
 robotSim::robotSim(const std::string &name):
     TaskContext(name),
-    is_configured(false)
+    is_configured(false),
+    _models_loaded(false)
 {
     this->provides("gazebo")->addOperation("WorldUpdateBegin",
             &robotSim::WorldUpdateBegin, this, RTT::ClientThread);
@@ -29,6 +30,9 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getKinematicChains", &robotSim::getKinematiChains,
                 this, RTT::ClientThread);
 
+    this->addOperation("getKinematicChainsAndJoints", &robotSim::getKinematiChainsAndJoints,
+                this, RTT::ClientThread);
+
     this->addOperation("printKinematicChainInformation", &robotSim::printKinematicChainInformation,
                 this, RTT::ClientThread);
 
@@ -38,6 +42,9 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getAvailableControlMode", &robotSim::getControlAvailableMode,
                 this, RTT::ClientThread);
 
+    this->addOperation("loadURDFAndSRDF", &robotSim::loadURDFAndSRDF,
+                this, RTT::ClientThread);
+
     this->provides("joint_info")->addOperation("getJointMappingForPort",
     			&robotSim::getJointMappingForPort, this, RTT::ClientThread);
 
@@ -45,6 +52,8 @@ robotSim::robotSim(const std::string &name):
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
             boost::bind(&robotSim::WorldUpdateEnd, this));
+
+
 }
 
 std::map<std::string, int> robotSim::getJointMappingForPort(
@@ -86,6 +95,17 @@ std::string robotSim::printKinematicChainInformation(const std::string& kinemati
         return "";}
 
     return kinematic_chains[kinematic_chain]->printKinematicChainInformation();
+}
+
+std::map<std::string, std::vector<std::string> > robotSim::getKinematiChainsAndJoints()
+{
+    std::map<std::string, std::vector<std::string> > kinematic_chains_and_joints_map;
+    std::vector<std::string> chain_names = getKinematiChains();
+    for(unsigned int i = 0; i < chain_names.size(); ++i){
+        kinematic_chains_and_joints_map.insert(std::pair<std::string, std::vector<std::string>>(
+            chain_names[i], kinematic_chains[chain_names[i]]->getJointNames()));
+    }
+    return kinematic_chains_and_joints_map;
 }
 
 std::string robotSim::getControlMode(const std::string& kinematic_chain)
@@ -193,6 +213,86 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
     return true;
+}
+
+bool robotSim::loadURDFAndSRDF(const std::string &URDF_path, const std::string &SRDF_path)
+{
+    if(!_models_loaded){
+        std::string _urdf_path = URDF_path;
+        std::string _srdf_path = SRDF_path;
+
+        RTT::log(RTT::Info)<<"URDF path: "<<_urdf_path<<RTT::endlog();
+        RTT::log(RTT::Info)<<"SRDF path: "<<_srdf_path<<RTT::endlog();
+
+        _models_loaded = _urdf_model.initFile(_urdf_path);
+
+        if(_models_loaded)
+        {
+            RTT::log(RTT::Info)<<"Model name: "<<_urdf_model.getName()<<RTT::endlog();
+
+            std::map<std::string, boost::shared_ptr<urdf::Joint> > joint_map = _urdf_model.joints_;
+            std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator it;
+            RTT::log(RTT::Info)<<"Joints: "<<RTT::endlog();
+            for(it = joint_map.begin(); it != joint_map.end(); it++)
+            {
+                if(it->second->type != urdf::Joint::FIXED)
+                    RTT::log(RTT::Info)<<"  "<<it->first<<RTT::endlog();
+            }
+
+            _models_loaded = _srdf_model.initFile(_urdf_model, _srdf_path);
+            if(_models_loaded)
+            {
+                std::vector<srdf::Model::Group> srdf_groups = _srdf_model.getGroups();
+                for(unsigned int i = 0; i < srdf_groups.size(); ++i)
+                {
+                    srdf::Model::Group group_i = srdf_groups[i];
+                    RTT::log(RTT::Info)<<"Group "<<group_i.name_<<" has "<<group_i.chains_.size()<<" Kinematic Chains:"<<RTT::endlog();
+                    for(unsigned int j = 0; j < group_i.chains_.size(); ++j){
+                        RTT::log(RTT::Info)<<"  Kinematic Chain #"<<j<<": base_link = "<<group_i.chains_[j].first<<"  tip_link = "<<group_i.chains_[j].second<<RTT::endlog();
+
+                    }
+                }
+
+            }
+        }
+    }
+    else
+        RTT::log(RTT::Info)<<"URDF and SRDF have been alread loaded!"<<RTT::endlog();
+
+    return _models_loaded;
+}
+
+bool robotSim::setKinematicChains()
+{
+//    std::vector<srdf::Model::Group> srdf_groups = _srdf_model.getGroups();
+//    if(_models_loaded)
+//    {
+//        for(unsigned int i = 0; i < srdf_groups.size(); ++i)
+//        {
+//            srdf::Model::Group group_i = srdf_groups[i];
+//            for(unsigned int j = 0; j < group_i.chains_.size(); ++j)
+//            {
+//                std::string base_link = group_i.chains_[j].first;
+//                std::string tip_link = group_i.chains_[j].second;
+
+//                std::vector<std::string> active_joints_in_kinematic_chain;
+
+
+
+
+
+
+
+
+//                kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
+//                    it->first, boost::shared_ptr<KinematicChain>(
+//                                            new KinematicChain(it->first, it->second, *(this->ports()), model))));
+//            RTT::log(RTT::Info) << "Kinematic Chains map created!" << RTT::endlog();
+//            }
+//        }
+//    }
+//    else
+        return false;
 }
 
 ORO_CREATE_COMPONENT_LIBRARY()

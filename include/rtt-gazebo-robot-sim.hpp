@@ -28,6 +28,9 @@
 #include <kinematic_chain.h>
 #include <boost/shared_ptr.hpp>
 
+#include <srdfdom_advr/model.h>
+#include <urdf/model.h>
+
 namespace cogimon {
 
 class robotSim: public RTT::TaskContext {
@@ -48,6 +51,8 @@ protected:
     std::string getControlMode(const std::string& kinematic_chain);
     std::vector<std::string> getControlAvailableMode(const std::string& kinematic_chain);
     std::string printKinematicChainInformation(const std::string& kinematic_chain);
+    bool loadURDFAndSRDF(const std::string& URDF_path, const std::string& SRDF_path);
+    std::map<std::string, std::vector<std::string> > getKinematiChainsAndJoints();
 
 
     /**
@@ -68,8 +73,13 @@ protected:
 
     std::map<std::string, boost::shared_ptr<KinematicChain>> kinematic_chains;
 
+    bool _models_loaded;
+    srdf::Model _srdf_model;
+    urdf::Model _urdf_model;
+
 private:
     bool is_configured;
+    bool setKinematicChains();
 };
 
 }
