@@ -30,6 +30,7 @@
 
 #include <srdfdom_advr/model.h>
 #include <urdf/model.h>
+#include <XBotCoreModel.h>
 
 namespace cogimon {
 
@@ -74,12 +75,10 @@ protected:
     std::map<std::string, boost::shared_ptr<KinematicChain>> kinematic_chains;
 
     bool _models_loaded;
-    srdf::Model _srdf_model;
-    urdf::Model _urdf_model;
+    XBot::XBotCoreModel _xbotcore_model;
 
 private:
     bool is_configured;
-    bool setKinematicChains();
 };
 
 }

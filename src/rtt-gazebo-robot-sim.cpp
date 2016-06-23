@@ -185,6 +185,11 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
         return false;
     }
 
+    if (!_models_loaded) {
+        RTT::log(RTT::Error) << "URDF and SRDF models has not been passed. Call loadURDFAndSRDF(URDF_path, SRDF_path)" << RTT::endlog();
+        return false;
+    }
+
     // Get the joints
     gazebo_joints_ = model->GetJoints();
     model_links_ = model->GetLinks();
@@ -193,12 +198,16 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     RTT::log(RTT::Info) << "Model has " << gazebo_joints_.size() << " joints" << RTT::endlog();
     RTT::log(RTT::Info) << "Model has " << model_links_.size() << " links" << RTT::endlog();
 
-    hardcoded_chains chains;
-    std::map<std::string, std::vector<std::string>>::iterator it;
-    for(it = chains.map_chains_joints.begin(); it != chains.map_chains_joints.end(); it++)
+    for(unsigned int i = 0; i < _xbotcore_model.get_chain_names().size(); ++i){
+        std::string chain_name = _xbotcore_model.get_chain_names()[i];
+        std::vector<std::string> enabled_joints_in_chain;
+        _xbotcore_model.get_enabled_joints_in_chain(chain_name,enabled_joints_in_chain);
+
         kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
-            it->first, boost::shared_ptr<KinematicChain>(
-                                    new KinematicChain(it->first, it->second, *(this->ports()), model))));
+            chain_name, boost::shared_ptr<KinematicChain>(
+                new KinematicChain(chain_name, enabled_joints_in_chain, *(this->ports()), model))));
+    }
+
     RTT::log(RTT::Info) << "Kinematic Chains map created!" << RTT::endlog();
 
     for(std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it = kinematic_chains.begin();
@@ -217,83 +226,31 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
 bool robotSim::loadURDFAndSRDF(const std::string &URDF_path, const std::string &SRDF_path)
 {
-    if(!_models_loaded){
+    if(!_models_loaded)
+    {
         std::string _urdf_path = URDF_path;
         std::string _srdf_path = SRDF_path;
 
         RTT::log(RTT::Info)<<"URDF path: "<<_urdf_path<<RTT::endlog();
         RTT::log(RTT::Info)<<"SRDF path: "<<_srdf_path<<RTT::endlog();
 
-        _models_loaded = _urdf_model.initFile(_urdf_path);
+        _models_loaded = _xbotcore_model.init(_urdf_path, _srdf_path);
 
-        if(_models_loaded)
-        {
-            RTT::log(RTT::Info)<<"Model name: "<<_urdf_model.getName()<<RTT::endlog();
-
-            std::map<std::string, boost::shared_ptr<urdf::Joint> > joint_map = _urdf_model.joints_;
-            std::map<std::string, boost::shared_ptr<urdf::Joint> >::iterator it;
-            RTT::log(RTT::Info)<<"Joints: "<<RTT::endlog();
-            for(it = joint_map.begin(); it != joint_map.end(); it++)
-            {
-                if(it->second->type != urdf::Joint::FIXED)
-                    RTT::log(RTT::Info)<<"  "<<it->first<<RTT::endlog();
-            }
-
-            _models_loaded = _srdf_model.initFile(_urdf_model, _srdf_path);
-            if(_models_loaded)
-            {
-                std::vector<srdf::Model::Group> srdf_groups = _srdf_model.getGroups();
-                for(unsigned int i = 0; i < srdf_groups.size(); ++i)
-                {
-                    srdf::Model::Group group_i = srdf_groups[i];
-                    RTT::log(RTT::Info)<<"Group "<<group_i.name_<<" has "<<group_i.chains_.size()<<" Kinematic Chains:"<<RTT::endlog();
-                    for(unsigned int j = 0; j < group_i.chains_.size(); ++j){
-                        RTT::log(RTT::Info)<<"  Kinematic Chain #"<<j<<": base_link = "<<group_i.chains_[j].first<<"  tip_link = "<<group_i.chains_[j].second<<RTT::endlog();
-
-                    }
-                }
-
-            }
+        for(unsigned int i = 0; i < _xbotcore_model.get_chain_names().size(); ++i){
+            RTT::log(RTT::Info)<<"chain #"<<i<<" "<<_xbotcore_model.get_chain_names()[i]<<RTT::endlog();
+            std::vector<std::string> enabled_joints_in_chain_i;
+            _xbotcore_model.get_enabled_joints_in_chain(_xbotcore_model.get_chain_names()[i], enabled_joints_in_chain_i);
+            for(unsigned int j = 0; j < enabled_joints_in_chain_i.size(); ++j)
+                RTT::log(RTT::Info)<<"  "<<enabled_joints_in_chain_i[j]<<RTT::endlog();
         }
     }
     else
-        RTT::log(RTT::Info)<<"URDF and SRDF have been alread loaded!"<<RTT::endlog();
+        RTT::log(RTT::Info)<<"URDF and SRDF have been already loaded!"<<RTT::endlog();
 
     return _models_loaded;
 }
 
-bool robotSim::setKinematicChains()
-{
-//    std::vector<srdf::Model::Group> srdf_groups = _srdf_model.getGroups();
-//    if(_models_loaded)
-//    {
-//        for(unsigned int i = 0; i < srdf_groups.size(); ++i)
-//        {
-//            srdf::Model::Group group_i = srdf_groups[i];
-//            for(unsigned int j = 0; j < group_i.chains_.size(); ++j)
-//            {
-//                std::string base_link = group_i.chains_[j].first;
-//                std::string tip_link = group_i.chains_[j].second;
 
-//                std::vector<std::string> active_joints_in_kinematic_chain;
-
-
-
-
-
-
-
-
-//                kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
-//                    it->first, boost::shared_ptr<KinematicChain>(
-//                                            new KinematicChain(it->first, it->second, *(this->ports()), model))));
-//            RTT::log(RTT::Info) << "Kinematic Chains map created!" << RTT::endlog();
-//            }
-//        }
-//    }
-//    else
-        return false;
-}
 
 ORO_CREATE_COMPONENT_LIBRARY()
 //ORO_CREATE_COMPONENT(cogimon::robotSim)

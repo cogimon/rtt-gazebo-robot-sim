@@ -23,6 +23,7 @@ set (Eigen_INCLUDE_DIRS "/usr/include/eigen3")
 find_package(orocos_kdl REQUIRED)
 find_package(Boost COMPONENTS thread REQUIRED)
 find_package(srdfdom_advr REQUIRED)
+find_package(XBotCoreModel REQUIRED)
 
 find_package(RST-RT REQUIRED)
 message(STATUS "RST-RT version: ${RST-RT_VERSION}")
@@ -57,6 +58,7 @@ include_directories(
     ${RST-RT_INCLUDE_DIRS}
     ${TINYXML_INCLUDE_DIRS}
     ${srdfdom_advr_INCLUDE_DIRS}
+    ${XBotCoreModel_INCLUDE_DIRS}
 )
 
 orocos_component(${PROJECT_NAME} src/rtt-gazebo-robot-sim.cpp src/rtt-gazebo-robot-sim_hooks.cpp src/kinematic_chain.cpp)
@@ -71,6 +73,7 @@ target_link_libraries(${PROJECT_NAME}
    ${RST-RT_LIBRARIES}
    ${TINYXML_LIBRARIES}
    ${srdfdom_advr_LIBRARIES}
+   ${XBotCoreModel_LIBRARIES}
 )
 
 orocos_generate_package(INCLUDE_DIRS include)

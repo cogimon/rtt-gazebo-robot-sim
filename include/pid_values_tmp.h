@@ -3,59 +3,6 @@
 
 #include <gazebo/common/common.hh>
 
-class hardcoded_chains{
-public:
-    hardcoded_chains(){
-        std::vector<std::string> joints;
-
-        joints.push_back("WaistLat");
-        joints.push_back("WaistSag");
-        joints.push_back("WaistYaw");
-        map_chains_joints.insert(std::pair<std::string, std::vector<std::string>>("torso", joints));
-        joints.clear();
-
-        joints.push_back("RHipSag");
-        joints.push_back("RHipLat");
-        joints.push_back("RHipYaw");
-        joints.push_back("RKneeSag");
-        joints.push_back("RAnkLat");
-        joints.push_back("RAnkSag");
-        map_chains_joints.insert(std::pair<std::string, std::vector<std::string>>("right_leg", joints));
-        joints.clear();
-
-        joints.push_back("LHipSag");
-        joints.push_back("LHipLat");
-        joints.push_back("LHipYaw");
-        joints.push_back("LKneeSag");
-        joints.push_back("LAnkLat");
-        joints.push_back("LAnkSag");
-        map_chains_joints.insert(std::pair<std::string, std::vector<std::string>>("left_leg", joints));
-        joints.clear();
-
-        joints.push_back("RShSag");
-        joints.push_back("RShLat");
-        joints.push_back("RShYaw");
-        joints.push_back("RElbj");
-        joints.push_back("RForearmPlate");
-        joints.push_back("RWrj1");
-        joints.push_back("RWrj2");
-        map_chains_joints.insert(std::pair<std::string, std::vector<std::string>>("right_arm", joints));
-        joints.clear();
-
-        joints.push_back("LShSag");
-        joints.push_back("LShLat");
-        joints.push_back("LShYaw");
-        joints.push_back("LElbj");
-        joints.push_back("LForearmPlate");
-        joints.push_back("LWrj1");
-        joints.push_back("LWrj2");
-        map_chains_joints.insert(std::pair<std::string, std::vector<std::string>>("left_arm", joints));
-        joints.clear();
-
-    }
-    std::map<std::string, std::vector<std::string>> map_chains_joints;
-};
-
 class hardcoded_pids {
 public:
     hardcoded_pids() {
