@@ -54,14 +54,7 @@ protected:
     std::string printKinematicChainInformation(const std::string& kinematic_chain);
     bool loadURDFAndSRDF(const std::string& URDF_path, const std::string& SRDF_path);
     std::map<std::string, std::vector<std::string> > getKinematiChainsAndJoints();
-
-
-    /**
-     * Provides the joint name to index mapping for other components to retrieve.
-     * If there isn't such an port (portName) existing, or used in an kinematic chain,
-     * the call will return an empty map. Otherwise it will contain the mapping.
-     */
-    std::map<std::string, int> getJointMappingForPort(std::string portName);
+    bool resetModelConfiguration();
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
