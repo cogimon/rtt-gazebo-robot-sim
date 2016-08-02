@@ -28,6 +28,7 @@
 #include <kinematic_chain.h>
 #include <boost/shared_ptr.hpp>
 
+
 namespace cogimon {
 
 class robotSim: public RTT::TaskContext {
@@ -48,7 +49,8 @@ protected:
     std::string getControlMode(const std::string& kinematic_chain);
     std::vector<std::string> getControlAvailableMode(const std::string& kinematic_chain);
     std::string printKinematicChainInformation(const std::string& kinematic_chain);
-
+    bool loadURDFAndSRDF(const std::string& URDF_path, const std::string& SRDF_path);
+    std::map<std::string, std::vector<std::string> > getKinematiChainsAndJoints();
 
     /**
      * Provides the joint name to index mapping for other components to retrieve.
@@ -56,6 +58,7 @@ protected:
      * the call will return an empty map. Otherwise it will contain the mapping.
      */
     std::map<std::string, int> getJointMappingForPort(std::string portName);
+    bool resetModelConfiguration();
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
@@ -67,6 +70,8 @@ protected:
     gazebo::physics::Link_V model_links_;
 
     std::map<std::string, boost::shared_ptr<KinematicChain>> kinematic_chains;
+
+    bool _models_loaded;
 
 private:
     bool is_configured;

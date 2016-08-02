@@ -13,7 +13,8 @@ using namespace Eigen;
 
 robotSim::robotSim(const std::string &name):
     TaskContext(name),
-    is_configured(false)
+    is_configured(false),
+    _models_loaded(false)
 {
     this->provides("gazebo")->addOperation("WorldUpdateBegin",
             &robotSim::WorldUpdateBegin, this, RTT::ClientThread);
@@ -29,6 +30,9 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getKinematicChains", &robotSim::getKinematiChains,
                 this, RTT::ClientThread);
 
+    this->addOperation("getKinematicChainsAndJoints", &robotSim::getKinematiChainsAndJoints,
+                this, RTT::ClientThread);
+
     this->addOperation("printKinematicChainInformation", &robotSim::printKinematicChainInformation,
                 this, RTT::ClientThread);
 
@@ -38,8 +42,14 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getAvailableControlMode", &robotSim::getControlAvailableMode,
                 this, RTT::ClientThread);
 
+    this->addOperation("loadURDFAndSRDF", &robotSim::loadURDFAndSRDF,
+                this, RTT::ClientThread);
+
     this->provides("joint_info")->addOperation("getJointMappingForPort",
     			&robotSim::getJointMappingForPort, this, RTT::ClientThread);
+
+    this->addOperation("reset_model_configuration", &robotSim::resetModelConfiguration,
+                this, RTT::ClientThread);
 
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
@@ -78,6 +88,15 @@ std::map<std::string, int> robotSim::getJointMappingForPort(
 	return result;
 }
 
+bool robotSim::resetModelConfiguration()
+{
+    bool reset = true;
+    std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it;
+    for(it = kinematic_chains.begin(); it != kinematic_chains.end(); it++)
+        reset = reset && it->second->resetKinematicChain();
+    return reset;
+}
+
 std::string robotSim::printKinematicChainInformation(const std::string& kinematic_chain)
 {
     std::vector<std::string> chain_names = getKinematiChains();
@@ -86,6 +105,17 @@ std::string robotSim::printKinematicChainInformation(const std::string& kinemati
         return "";}
 
     return kinematic_chains[kinematic_chain]->printKinematicChainInformation();
+}
+
+std::map<std::string, std::vector<std::string> > robotSim::getKinematiChainsAndJoints()
+{
+    std::map<std::string, std::vector<std::string> > kinematic_chains_and_joints_map;
+    std::vector<std::string> chain_names = getKinematiChains();
+    for(unsigned int i = 0; i < chain_names.size(); ++i){
+        kinematic_chains_and_joints_map.insert(std::pair<std::string, std::vector<std::string>>(
+            chain_names[i], kinematic_chains[chain_names[i]]->getJointNames()));
+    }
+    return kinematic_chains_and_joints_map;
 }
 
 std::string robotSim::getControlMode(const std::string& kinematic_chain)
@@ -165,6 +195,12 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
         return false;
     }
 
+    //TODO: uncomment this again after fully implementing the function loadURDFAndSRDF()
+    //if (!_models_loaded) {
+    //    RTT::log(RTT::Error) << "URDF and SRDF models has not been passed. Call loadURDFAndSRDF(URDF_path, SRDF_path)" << RTT::endlog();
+    //    return false;
+    //}
+
     // Get the joints
     gazebo_joints_ = model->GetJoints();
     model_links_ = model->GetLinks();
@@ -194,6 +230,27 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
     return true;
 }
+
+bool robotSim::loadURDFAndSRDF(const std::string &URDF_path, const std::string &SRDF_path)
+{
+    if(!_models_loaded)
+    {
+        std::string _urdf_path = URDF_path;
+        std::string _srdf_path = SRDF_path;
+
+        RTT::log(RTT::Info)<<"URDF path: "<<_urdf_path<<RTT::endlog();
+        RTT::log(RTT::Info)<<"SRDF path: "<<_srdf_path<<RTT::endlog();
+
+        //TODO: complete this function...
+
+    }
+    else
+        RTT::log(RTT::Info)<<"URDF and SRDF have been already loaded!"<<RTT::endlog();
+
+    return _models_loaded;
+}
+
+
 
 ORO_CREATE_COMPONENT_LIBRARY()
 //ORO_CREATE_COMPONENT(cogimon::robotSim)

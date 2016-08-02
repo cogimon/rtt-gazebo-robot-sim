@@ -38,6 +38,7 @@ public:
     std::vector<std::string> getJointNames();
     std::vector<std::string> getControllersAvailable();
     bool initKinematicChain();
+    bool resetKinematicChain();
     bool setControlMode(const std::string& controlMode);
     void sense();
     void getCommand();
@@ -66,12 +67,14 @@ private:
     std::vector<std::string> _joint_names;
     std::map<std::string, std::string> _map_joint_name_scoped_name;
 
+    std::vector<double> _initial_joints_configuration;
+
     bool setController(const std::string& controller_type);
     void setFeedBack();
     bool setJointNamesAndIndices();
     bool initGazeboJointController();
     std::vector<std::string> getJointScopedNames();
-    void setInitialPosition();
+    void setInitialPosition(const bool use_actual_model_pose = true);
     void setInitialImpedance();
 
 };

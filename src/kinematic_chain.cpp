@@ -19,6 +19,10 @@ KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<
     RTT::log(RTT::Info) << "Joints: " << RTT::endlog();
     for(unsigned int i = 0; i < _joint_names.size(); ++i)
         RTT::log(RTT::Info) << "    " << _joint_names[i] << RTT::endlog();
+
+    _initial_joints_configuration.reserve(joint_names.size());
+    for(unsigned int i = 0; i < _initial_joints_configuration.size(); ++i)
+        _initial_joints_configuration.push_back(0.0);
 }
 
 std::vector<RTT::base::PortInterface*> KinematicChain::getAssociatedPorts() {
@@ -44,6 +48,14 @@ bool KinematicChain::initKinematicChain()
         return false;
     }
     setInitialPosition();
+    setInitialImpedance();
+    return true;
+}
+
+bool KinematicChain::resetKinematicChain()
+{
+    setControlMode(ControlModes::JointPositionCtrl);
+    setInitialPosition(false);
     setInitialImpedance();
     return true;
 }
@@ -170,13 +182,20 @@ bool KinematicChain::initGazeboJointController()
     return true;
 }
 
-void KinematicChain::setInitialPosition()
+void KinematicChain::setInitialPosition(const bool use_actual_model_pose)
 {
-    ///TODO: check if user initial config is set when it is used in the gazebo configure hook
-
     position_controller->orocos_port.clear();
-    for(unsigned int i = 0; i < _joint_names.size(); ++i)
-        position_controller->joint_cmd.angles[i] = _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
+    if(use_actual_model_pose)
+    {
+        for(unsigned int i = 0; i < _joint_names.size(); ++i)
+            position_controller->joint_cmd.angles[i] = _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
+    }
+    else
+    {
+        for(unsigned int i = 0; i < _joint_names.size(); ++i)
+            position_controller->joint_cmd.angles[i] = _initial_joints_configuration[i];
+        ///TODO: check if user initial config is set when it is used in the gazebo configure hook
+    }
     position_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
 }
 
