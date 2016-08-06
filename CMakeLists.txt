@@ -61,10 +61,14 @@ include_directories(
     ${XBotCoreModel_INCLUDE_DIRS}
 )
 
+
+ADD_LIBRARY(gain_parser  src/parser.cpp)
+TARGET_LINK_LIBRARIES(gain_parser ${TINYXML_LIBRARIES})
+
 orocos_component(${PROJECT_NAME} src/rtt-gazebo-robot-sim.cpp src/rtt-gazebo-robot-sim_hooks.cpp src/kinematic_chain.cpp)
 set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS RTT_COMPONENT)
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} gain_parser
    ${USE_OROCOS_LIBRARIES}
    ${orocos_kdl_LIBRARIES}
    ${GAZEBO_LIBRARIES}
@@ -76,4 +80,11 @@ target_link_libraries(${PROJECT_NAME}
    ${XBotCoreModel_LIBRARIES}
 )
 
+
 orocos_generate_package(INCLUDE_DIRS include)
+
+#######################
+# Add Testing target  #
+#######################
+enable_testing()
+add_subdirectory(tests)
