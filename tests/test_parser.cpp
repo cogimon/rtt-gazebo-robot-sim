@@ -26,6 +26,8 @@ namespace {
     {
         std::string file_name = "coman.srdf";
         EXPECT_TRUE(this->gains.initFile(file_name));
+
+        this->gains.printGains();
     }
 }
 

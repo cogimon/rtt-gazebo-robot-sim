@@ -85,6 +85,12 @@
       <gains D="10." I="0." P="1000." reference="WaistSag"/>
       <gains D="10." I="0." P="1000." reference="WaistYaw"/>
     </controller>
+    <controller type="JointImpedanceCtrl">
+      <gains stiffness="100." damping="10." reference="WaistLat"/>
+      <gains stiffness="10." damping="1." reference="WaistSag"/>
+      <gains stiffness="10." damping="1." reference="WaistYaw"/>
+    </controller>
+    <controller type="JointTorqueCtrl"/>
   </rtt-gazebo>
   <rtt-gazebo reference="right_arm">
     <controller type="JointPositionCtrl">
@@ -96,6 +102,7 @@
       <gains D="10." I="0." P="1000." reference="RWrj1"/>
       <gains D="10." I="0." P="1000." reference="RWrj2"/>
     </controller>
+    <controller type="JointTorqueCtrl"/>
   </rtt-gazebo>
   <rtt-gazebo reference="left_arm">
     <controller type="JointPositionCtrl">
@@ -107,6 +114,7 @@
       <gains D="10." I="0." P="1000." reference="LWrj1"/>
       <gains D="10." I="0." P="1000." reference="LWrj2"/>
     </controller>
+    <controller type="JointTorqueCtrl"/>
   </rtt-gazebo>
   <rtt-gazebo reference="right_leg">
     <controller type="JointPositionCtrl">

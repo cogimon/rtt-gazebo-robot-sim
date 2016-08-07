@@ -10,9 +10,17 @@
 namespace cogimon {
 
 struct parsed_words{
+        static constexpr const char* robot_tag = "robot";
         static constexpr const char* rtt_gazebo_tag = "rtt-gazebo";
         static constexpr const char* controller_tag = "controller";
         static constexpr const char* reference_attribute = "reference";
+        static constexpr const char* type_attribute = "type";
+        static constexpr const char* gains_tag = "gains";
+        static constexpr const char* P_attribute = "P";
+        static constexpr const char* I_attribute = "I";
+        static constexpr const char* D_attribute = "D";
+        static constexpr const char* stiffness_attribute = "stiffness";
+        static constexpr const char* damping_attribute = "damping";
 
 };
 
@@ -93,10 +101,13 @@ public:
     gain_parser();
 
     bool initFile(const std::string& filename);
+    void printGains();
 
     gains Gains;
 private:
     boost::shared_ptr<TiXmlDocument> _doc;
+
+
 
 };
 
