@@ -46,6 +46,18 @@ struct gains{
     std::map<kinematic_chain, PIDGains> map_PIDGains;
     std::map<kinematic_chain, ImpedanceGains> map_ImpedanceGains;
 
+    gains()
+    {
+
+    }
+
+    gains(const gains& _gains)
+    {
+        map_controllers = _gains.map_controllers;
+        map_PIDGains = _gains.map_PIDGains;
+        map_ImpedanceGains = _gains.map_ImpedanceGains;
+    }
+
     bool getPID(const kinematic_chain& kc, const std::string& joint_name, PIDGain& pid)
     {
         if(map_controllers.find(kc) == map_controllers.end())
@@ -53,7 +65,7 @@ struct gains{
         
         std::vector<std::string> available_controllers = map_controllers.at(kc);
         if(std::find(available_controllers.begin(), available_controllers.end(), 
-                     ControlModes::JointPositionCtrl) != available_controllers.end())
+                     std::string(ControlModes::JointPositionCtrl)) != available_controllers.end())
         {
             PIDGains pids= map_PIDGains.at(kc);
             for(unsigned int i = 0; i < pids.size(); ++i)
@@ -63,8 +75,8 @@ struct gains{
                     pid = pids[i];
                     return true;
                 }
-                return false;
             }
+            return false;
         } 
         else 
             return false;
@@ -78,7 +90,7 @@ struct gains{
 
         std::vector<std::string> available_controllers = map_controllers.at(kc);
         if(std::find(available_controllers.begin(), available_controllers.end(),
-                     ControlModes::JointPositionCtrl) != available_controllers.end())
+                     std::string(ControlModes::JointImpedanceCtrl)) != available_controllers.end())
         {
             ImpedanceGains impedances= map_ImpedanceGains.at(kc);
             for(unsigned int i = 0; i < impedances.size(); ++i)
@@ -88,8 +100,8 @@ struct gains{
                     impedance = impedances[i];
                     return true;
                 }
-                return false;
             }
+            return false;
         }
         else
             return false;

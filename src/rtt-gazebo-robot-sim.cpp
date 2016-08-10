@@ -190,7 +190,7 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
     for(std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it = kinematic_chains.begin();
         it != kinematic_chains.end(); it++){
-        if(!(it->second->initKinematicChain())){
+        if(!(it->second->initKinematicChain(gains.Gains))){
             RTT::log(RTT::Warning) << "Problem Init Kinematic Chain" <<
                 it->second->getKinematicChainName() << RTT::endlog();
             return false;

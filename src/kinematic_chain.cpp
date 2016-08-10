@@ -20,8 +20,7 @@ KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<
     for(unsigned int i = 0; i < _joint_names.size(); ++i)
         RTT::log(RTT::Info) << "    " << _joint_names[i] << RTT::endlog();
 
-    _initial_joints_configuration.reserve(joint_names.size());
-    for(unsigned int i = 0; i < _initial_joints_configuration.size(); ++i)
+    for(unsigned int i = 0; i < _joint_names.size(); ++i)
         _initial_joints_configuration.push_back(0.0);
 }
 
@@ -29,34 +28,77 @@ std::vector<RTT::base::PortInterface*> KinematicChain::getAssociatedPorts() {
 	return _inner_ports;
 }
 
-bool KinematicChain::initKinematicChain()
+bool KinematicChain::initKinematicChain(const cogimon::gains& gains_)
 {
+    _gains.reset(new cogimon::gains(gains_));
+    std::vector<std::string> controllers = _gains->map_controllers[_kinematic_chain_name];
+    if(controllers.empty())
+    {
+        RTT::log(RTT::Error)<<"No controllers are available!"<<RTT::endlog();
+        return false;
+    }
+    else
+    {
+        RTT::log(RTT::Info)<<"Available controllers for "<<_kinematic_chain_name<<" are:"<<RTT::endlog();
+        for(unsigned int i = 0; i < controllers.size(); ++i)
+            RTT::log(RTT::Info)<<"  "<<controllers[i]<<RTT::endlog();
+    }
+
     setJointNamesAndIndices();
     _number_of_dofs = _map_joint_name_scoped_name.size();
 
-    if(!setController(std::string(ControlModes::JointPositionCtrl)))
-        return false;
-    if(!setController(std::string(ControlModes::JointImpedanceCtrl)))
-        return false;
-    if(!setController(std::string(ControlModes::JointTorqueCtrl)))
-        return false;
-
-    setFeedBack();
-
-    if(!initGazeboJointController()){
-        RTT::log(RTT::Error) << "Joint Controller can NOT be initialized, exiting" << RTT::endlog();
-        return false;
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointPositionCtrl)) != controllers.end()){
+        if(!setController(std::string(ControlModes::JointPositionCtrl)))
+            return false;
+        else
+            RTT::log(RTT::Info)<<std::string(ControlModes::JointPositionCtrl)<<" activated!"<<RTT::endlog();
     }
-    setInitialPosition();
-    setInitialImpedance();
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointImpedanceCtrl)) != controllers.end()){
+        if(!setController(std::string(ControlModes::JointImpedanceCtrl)))
+            return false;
+        else
+            RTT::log(RTT::Info)<<std::string(ControlModes::JointImpedanceCtrl)<<" activated!"<<RTT::endlog();
+    }
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointTorqueCtrl)) != controllers.end()){
+        if(!setController(std::string(ControlModes::JointTorqueCtrl)))
+            return false;
+        else
+            RTT::log(RTT::Info)<<std::string(ControlModes::JointTorqueCtrl)<<" activated!"<<RTT::endlog();}
+
+
+    setFeedBack(); //We consider, for now, that the full feedback is available
+    RTT::log(RTT::Info)<<"Full feedback activated!"<<RTT::endlog();
+
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointPositionCtrl)) != controllers.end()){
+        if(!initGazeboJointController())
+        {
+            RTT::log(RTT::Error) << "Joint Controller can NOT be initialized, exiting" << RTT::endlog();
+            return false;
+        }
+        else
+        {
+            RTT::log(RTT::Info)<<"Gazebo Joint Controlled inited!"<<RTT::endlog();
+            setInitialPosition();
+            RTT::log(RTT::Info)<<"Initial Position set!"<<RTT::endlog();
+        }
+    }
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointImpedanceCtrl)) != controllers.end()){
+        setInitialImpedance();
+        RTT::log(RTT::Info)<<"Initial Impedance set!"<<RTT::endlog();}
     return true;
 }
 
 bool KinematicChain::resetKinematicChain()
 {
+    std::vector<std::string> controllers = _gains->map_controllers[_kinematic_chain_name];
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointPositionCtrl)) == controllers.end()){
+        RTT::log(RTT::Error)<<"Reset can be used only if "<<ControlModes::JointPositionCtrl<<" is available!"<<RTT::endlog();
+        return false;}
+
     setControlMode(ControlModes::JointPositionCtrl);
     setInitialPosition(false);
-    setInitialImpedance();
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointImpedanceCtrl)) != controllers.end())
+        setInitialImpedance();
     return true;
 }
 
@@ -174,10 +216,11 @@ bool KinematicChain::initGazeboJointController()
     for(unsigned int i = 0; i < _joint_names.size(); ++i)
             _gazebo_position_joint_controller->AddJoint(_model->GetJoint(_joint_names[i]));
 
-    hardcoded_pids PID;
     std::vector<std::string> joint_scoped_names = getJointScopedNames();
-    for(unsigned int i = 0; i < joint_scoped_names.size(); ++i)
-        _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], PID.pids[_joint_names[i]]);
+    for(unsigned int i = 0; i < joint_scoped_names.size(); ++i){
+        cogimon::PIDGain pid;
+        _gains->getPID(_kinematic_chain_name, _joint_names[i], pid);
+        _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], gazebo::common::PID(pid.P,pid.I,pid.D));}
 
     return true;
 }
@@ -201,10 +244,11 @@ void KinematicChain::setInitialPosition(const bool use_actual_model_pose)
 
 void KinematicChain::setInitialImpedance()
 {
-    hardcoded_impedance impedance_init;
     for(unsigned int i = 0; i < _joint_names.size(); ++i){
-        impedance_controller->joint_cmd.stiffness[i] = impedance_init.impedance[_joint_names[i]].first;
-        impedance_controller->joint_cmd.damping[i] = impedance_init.impedance[_joint_names[i]].second;
+        cogimon::ImpedanceGain impedance;
+        _gains->getImpedance(_kinematic_chain_name, _joint_names[i], impedance);
+        impedance_controller->joint_cmd.stiffness[i] = impedance.stiffness;
+        impedance_controller->joint_cmd.damping[i] = impedance.damping;
     }
     impedance_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
 }

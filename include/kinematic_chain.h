@@ -13,6 +13,8 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 
+#include <parser.h>
+
 
 using namespace rstrt::kinematics;
 using namespace rstrt::dynamics;
@@ -37,7 +39,7 @@ public:
     std::string getCurrentControlMode();
     std::vector<std::string> getJointNames();
     std::vector<std::string> getControllersAvailable();
-    bool initKinematicChain();
+    bool initKinematicChain(const cogimon::gains& gains_);
     bool resetKinematicChain();
     bool setControlMode(const std::string& controlMode);
     void sense();
@@ -76,6 +78,8 @@ private:
     std::vector<std::string> getJointScopedNames();
     void setInitialPosition(const bool use_actual_model_pose = true);
     void setInitialImpedance();
+
+    boost::shared_ptr<cogimon::gains> _gains;
 
 };
 
