@@ -24,7 +24,8 @@ namespace {
 
     TEST_F(test_parser, test_parser_)
     {
-        std::string file_name = "coman.srdf";
+        std::string file_name = std::string(RTT_GAZEBO_TESTS_DIR)+"/coman.srdf";
+        std::cout<<"file_name: "<<file_name<<std::endl;
         EXPECT_TRUE(this->gains.initFile(file_name));
 
         this->gains.printGains();

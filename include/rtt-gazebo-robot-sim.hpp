@@ -30,6 +30,7 @@
 
 #include <srdfdom_advr/model.h>
 #include <urdf/model.h>
+#include <parser.h>
 #include <XBotCoreModel.h>
 
 namespace cogimon {
@@ -69,6 +70,8 @@ protected:
 
     bool _models_loaded;
     XBot::XBotCoreModel _xbotcore_model;
+
+    gain_parser gains;
 
 private:
     bool is_configured;

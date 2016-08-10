@@ -213,6 +213,7 @@ bool robotSim::loadURDFAndSRDF(const std::string &URDF_path, const std::string &
         RTT::log(RTT::Info)<<"SRDF path: "<<_srdf_path<<RTT::endlog();
 
         _models_loaded = _xbotcore_model.init(_urdf_path, _srdf_path);
+        _models_loaded = _models_loaded && gains.initFile(_srdf_path);
 
         for(unsigned int i = 0; i < _xbotcore_model.get_chain_names().size(); ++i){
             RTT::log(RTT::Info)<<"chain #"<<i<<" "<<_xbotcore_model.get_chain_names()[i]<<RTT::endlog();

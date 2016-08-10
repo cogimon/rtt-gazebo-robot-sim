@@ -21,6 +21,8 @@ link_directories(${GTEST_LIB_DIRS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} )
 enable_testing()
 
+add_definitions(-DRTT_GAZEBO_TESTS_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+
 add_custom_command( TARGET gain_parser POST_BUILD
                COMMAND ${CMAKE_CTEST_COMMAND}
                MAIN_DEPENDENCY gain_parser
