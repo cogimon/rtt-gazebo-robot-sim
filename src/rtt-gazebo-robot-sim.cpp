@@ -48,6 +48,9 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("reset_model_configuration", &robotSim::resetModelConfiguration,
                 this, RTT::ClientThread);
 
+    this->addOperation("setInitialPosition", &robotSim::setInitialPosition,
+                this, RTT::ClientThread);
+
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
@@ -58,6 +61,7 @@ robotSim::robotSim(const std::string &name):
 
 bool robotSim::resetModelConfiguration()
 {
+    RTT::log(RTT::Info)<<"Reset Model Configuration has been called!"<<RTT::endlog();
     bool reset = true;
     std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it;
     for(it = kinematic_chains.begin(); it != kinematic_chains.end(); it++)
@@ -227,6 +231,24 @@ bool robotSim::loadURDFAndSRDF(const std::string &URDF_path, const std::string &
         RTT::log(RTT::Info)<<"URDF and SRDF have been already loaded!"<<RTT::endlog();
 
     return _models_loaded;
+}
+
+bool robotSim::setInitialPosition(const std::string& kin_chain, const std::vector<double>& init)
+{
+    std::vector<std::string> kin_chains = getKinematiChains();
+    if(!(std::find(kin_chains.begin(), kin_chains.end(), kin_chain) != kin_chains.end())){
+        RTT::log(RTT::Error)<<kin_chain<<" is not available!"<<RTT::endlog();
+        return false;}
+
+    bool a = kinematic_chains[kin_chain]->setInitialJointConfiguration(init);
+
+    if(a){
+        RTT::log(RTT::Info)<<kin_chain<<" home config: [ ";
+        for(unsigned int i = 0; i < init.size(); ++i)
+            RTT::log(RTT::Info)<<init[i]<<" ";
+        RTT::log(RTT::Info)<<"]"<<RTT::endlog();}
+
+    return a;
 }
 
 

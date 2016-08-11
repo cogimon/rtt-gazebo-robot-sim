@@ -47,6 +47,7 @@ public:
     void move();
     std::string printKinematicChainInformation();
     std::vector<RTT::base::PortInterface*> getAssociatedPorts();
+    bool setInitialJointConfiguration(const std::vector<double>& home);
 
 
     boost::shared_ptr<position_ctrl> position_controller;

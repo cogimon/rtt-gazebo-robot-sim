@@ -56,6 +56,7 @@ protected:
     bool loadURDFAndSRDF(const std::string& URDF_path, const std::string& SRDF_path);
     std::map<std::string, std::vector<std::string> > getKinematiChainsAndJoints();
     bool resetModelConfiguration();
+    bool setInitialPosition(const std::string& kin_chain, const std::vector<double>& init);
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;

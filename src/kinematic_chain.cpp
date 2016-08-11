@@ -78,7 +78,7 @@ bool KinematicChain::initKinematicChain(const cogimon::gains& gains_)
         else
         {
             RTT::log(RTT::Info)<<"Gazebo Joint Controlled inited!"<<RTT::endlog();
-            setInitialPosition();
+            setInitialPosition(false);
             RTT::log(RTT::Info)<<"Initial Position set!"<<RTT::endlog();
         }
     }
@@ -373,4 +373,12 @@ std::string KinematicChain::printKinematicChainInformation()
     info << "    Current Control Mode: " << _current_control_mode << std::endl;
 
     return info.str();
+}
+
+bool KinematicChain::setInitialJointConfiguration(const std::vector<double>& home)
+{
+    if(home.size() != _initial_joints_configuration.size())
+        return false;
+    _initial_joints_configuration = home;
+    return true;
 }
