@@ -216,11 +216,14 @@ bool KinematicChain::initGazeboJointController()
     for(unsigned int i = 0; i < _joint_names.size(); ++i)
             _gazebo_position_joint_controller->AddJoint(_model->GetJoint(_joint_names[i]));
 
+    RTT::log(RTT::Info)<<_kinematic_chain_name<<" PIDs:"<<RTT::endlog();
     std::vector<std::string> joint_scoped_names = getJointScopedNames();
     for(unsigned int i = 0; i < joint_scoped_names.size(); ++i){
         cogimon::PIDGain pid;
         _gains->getPID(_kinematic_chain_name, _joint_names[i], pid);
-        _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], gazebo::common::PID(pid.P,pid.I,pid.D));}
+        _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], gazebo::common::PID(pid.P,pid.I,pid.D));
+        RTT::log(RTT::Info)<<"  "<<pid.joint_name<<" P: "<<pid.P<<" I: "<<pid.I<<" D: "<<pid.D<<RTT::endlog();
+    }
 
     return true;
 }
@@ -244,11 +247,13 @@ void KinematicChain::setInitialPosition(const bool use_actual_model_pose)
 
 void KinematicChain::setInitialImpedance()
 {
+    RTT::log(RTT::Info)<<_kinematic_chain_name<<" impedance:"<<RTT::endlog();
     for(unsigned int i = 0; i < _joint_names.size(); ++i){
         cogimon::ImpedanceGain impedance;
         _gains->getImpedance(_kinematic_chain_name, _joint_names[i], impedance);
         impedance_controller->joint_cmd.stiffness[i] = impedance.stiffness;
         impedance_controller->joint_cmd.damping[i] = impedance.damping;
+        RTT::log(RTT::Info)<<"  "<<impedance.joint_name<<" stiffness: "<<impedance.stiffness<<" damping: "<<impedance.damping<<RTT::endlog();
     }
     impedance_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
 }
