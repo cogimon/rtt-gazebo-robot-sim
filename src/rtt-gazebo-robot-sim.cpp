@@ -248,6 +248,9 @@ bool robotSim::setInitialPosition(const std::string& kin_chain, const std::vecto
             RTT::log(RTT::Info)<<init[i]<<" ";
         RTT::log(RTT::Info)<<"]"<<RTT::endlog();}
 
+    if(a)
+        a = a && resetModelConfiguration();
+
     return a;
 }
 
