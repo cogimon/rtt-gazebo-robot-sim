@@ -1,6 +1,4 @@
 #include <kinematic_chain.h>
-#include <pid_values_tmp.h>
-
 
 using namespace cogimon;
 KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<std::string> &joint_names, RTT::DataFlowInterface& ports,

@@ -4,8 +4,6 @@
 #include <fstream>
 #include <streambuf>
 
-#include "pid_values_tmp.h"
-
 using namespace cogimon;
 using namespace RTT;
 using namespace RTT::os;
