@@ -46,7 +46,7 @@ public:
     void getCommand();
     void move();
     std::string printKinematicChainInformation();
-    std::vector<RTT::base::PortInterface*> getAssociatedPorts();
+
     bool setInitialJointConfiguration(const std::vector<double>& home);
 
 
@@ -62,7 +62,6 @@ private:
     unsigned int _number_of_dofs;
     RTT::DataFlowInterface& _ports;
 
-    std::vector<RTT::base::PortInterface*> _inner_ports;
 
     gazebo::physics::ModelPtr _model;
     std::string _current_control_mode;

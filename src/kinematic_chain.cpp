@@ -20,10 +20,8 @@ KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<
 
     for(unsigned int i = 0; i < _joint_names.size(); ++i)
         _initial_joints_configuration.push_back(0.0);
-}
 
-std::vector<RTT::base::PortInterface*> KinematicChain::getAssociatedPorts() {
-	return _inner_ports;
+
 }
 
 bool KinematicChain::initKinematicChain(const cogimon::gains& gains_)
@@ -139,8 +137,6 @@ void KinematicChain::setFeedBack()
 		full_feedback->orocos_port.setName(_kinematic_chain_name+"_JointFeedback");
 		full_feedback->orocos_port.doc("Output for Joint-fb from Gazebo to Orocos world. Contains joint-position, -velocity and -torque.");
 		_ports.addPort(full_feedback->orocos_port);
-		// TODO needs to be solved better
-		_inner_ports.push_back(_ports.getPort(full_feedback->orocos_port.getName()));
 
 		full_feedback->joint_feedback = JointState(_number_of_dofs);
 		full_feedback->orocos_port.setDataSample(full_feedback->joint_feedback);
@@ -153,8 +149,6 @@ bool KinematicChain::setController(const std::string& controller_type)
 		position_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointPositionCtrl);
 		position_controller->orocos_port.doc("Input for JointPosition-cmds from Orocos to Gazebo world.");
 		_ports.addPort(position_controller->orocos_port);
-		// TODO needs to be solved better
-		_inner_ports.push_back(_ports.getPort(position_controller->orocos_port.getName()));
 
 		position_controller->joint_cmd = JointAngles(_number_of_dofs);
 		position_controller->joint_cmd.angles.setZero();
@@ -166,8 +160,6 @@ bool KinematicChain::setController(const std::string& controller_type)
 		impedance_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointImpedanceCtrl);
 		impedance_controller->orocos_port.doc("Input for JointImpedance-cmds from Orocos to Gazebo world.");
 		_ports.addPort(impedance_controller->orocos_port);
-		// TODO needs to be solved better
-		_inner_ports.push_back(_ports.getPort(impedance_controller->orocos_port.getName()));
 
 		impedance_controller->joint_cmd = JointImpedance(_number_of_dofs);
 		impedance_controller->joint_cmd.stiffness.setZero();
@@ -179,8 +171,6 @@ bool KinematicChain::setController(const std::string& controller_type)
 		torque_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointTorqueCtrl);
 		torque_controller->orocos_port.doc("Input for JointTorque-cmds from Orocos to Gazebo world.");
 		_ports.addPort(torque_controller->orocos_port);
-		// TODO needs to be solved better
-		_inner_ports.push_back(_ports.getPort(torque_controller->orocos_port.getName()));
 
 		torque_controller->joint_cmd = JointTorques(_number_of_dofs);
 		torque_controller->joint_cmd.torques.setZero();
