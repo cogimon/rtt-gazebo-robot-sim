@@ -212,7 +212,8 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     for(std::map<std::string,int>::iterator i = ft_srdf.begin();
         i != ft_srdf.end(); i++)
     {
-        force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(), sensors);
+        force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(), sensors,
+                               *(this->ports()));
         if(ft.isInited())
             force_torque_sensors.push_back(ft);
     }

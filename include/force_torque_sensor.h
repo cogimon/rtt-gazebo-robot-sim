@@ -5,7 +5,24 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
 #include <XBotCoreModel.h>
+#include <rtt/Port.hpp>
+#include <rst-rt/dynamics/Wrench.hpp>
 
+template <class T> class sensorFeedback {
+public:
+    sensorFeedback() {
+    }
+
+    ~sensorFeedback() {
+
+    }
+
+    T sensor_feedback;
+    RTT::OutputPort<T> orocos_port;
+
+};
+
+typedef sensorFeedback<rstrt::dynamics::Wrench> wrench;
 
 /**
  * @brief The force_torque_sensor class considers the force/torque sensors specified in the urdf
@@ -23,7 +40,8 @@ public:
      */
     force_torque_sensor(const std::string& joint_srdf, gazebo::physics::ModelPtr gazebo_model,
                         boost::shared_ptr<urdf::ModelInterface const> urdf_model,
-                        gazebo::sensors::Sensor_V sensors);
+                        gazebo::sensors::Sensor_V sensors,
+                        RTT::DataFlowInterface& ports);
 
     bool isInited(){ return _inited;}
 
@@ -40,6 +58,9 @@ private:
 
     bool _inited;
 
+    boost::shared_ptr<wrench> _wrench_measured;
+    RTT::DataFlowInterface& _ports;
+
     /**
      * @brief pairFrameToSensor check if a sensor is associated to a given frame
      * @param joint_srdf is the joint name specified in the srdf under the group "force_torque_sensors"
@@ -51,6 +72,7 @@ private:
                            gazebo::physics::ModelPtr gazebo_model,
                            boost::shared_ptr<urdf::ModelInterface const> urdf_model);
 
+    void setFeedback();
 
 
 };

@@ -5,11 +5,15 @@
 force_torque_sensor::force_torque_sensor(const std::string& joint_srdf,
                                          gazebo::physics::ModelPtr gazebo_model,
                                          boost::shared_ptr<urdf::ModelInterface const> urdf_model,
-                                         gazebo::sensors::Sensor_V sensors):
+                                         gazebo::sensors::Sensor_V sensors,
+                                         RTT::DataFlowInterface& ports):
     _force_torque_frame(""),
     _sensor(),
-    _inited(false)
+    _inited(false),
+    _ports(ports)
 {
+    RTT::log(RTT::Info) << "Creating Force/Torque Sensor "<<RTT::endlog();
+
     for(unsigned int i = 0; i < sensors.size(); ++i)
     {
         if(sensors[i]->Type().compare("force_torque") == 0){
@@ -25,9 +29,20 @@ force_torque_sensor::force_torque_sensor(const std::string& joint_srdf,
     if(_sensor == NULL)
         RTT::log(RTT::Error)<<joint_srdf<<" can not be associated to any FT sensor"<<RTT::endlog();
     else{
-
+        setFeedback();
         _inited = true;
     }
+}
+
+void force_torque_sensor::setFeedback()
+{
+    _wrench_measured.reset(new wrench);
+    _wrench_measured->orocos_port.setName(_force_torque_frame);
+    _wrench_measured->orocos_port.doc("Wrench measured from force/torque sensor.");
+    _ports.addPort(_wrench_measured->orocos_port);
+
+    _wrench_measured->sensor_feedback = rstrt::dynamics::Wrench();
+    _wrench_measured->orocos_port.setDataSample(_wrench_measured->sensor_feedback);
 }
 
 bool force_torque_sensor::pairFrameToSensor(const std::string& joint_srdf,
@@ -40,10 +55,8 @@ bool force_torque_sensor::pairFrameToSensor(const std::string& joint_srdf,
     ///Here we do 2 checks:
     /// 1. We check if joint_srdf and the sensor_joint_name are both parent joints of the same link
     std::string sensor_link_name = gazebo_model->GetJoint(sensor_joint_name)->GetChild()->GetName();
-
     boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_model->getJoint(joint_srdf);
     std::string srdf_link_name = urdf_joint->child_link_name;
-
     if(sensor_link_name.compare(srdf_link_name) == 0){
         RTT::log(RTT::Info)<<"Sensor "<<sensor->Name()<<" of type "<<sensor->GetType()<<
                              " specified in joint "<<sensor->ParentName()<<" is associated to link "<<
@@ -59,7 +72,7 @@ bool force_torque_sensor::pairFrameToSensor(const std::string& joint_srdf,
         RTT::log(RTT::Info)<<"Sensor "<<sensor->Name()<<" of type "<<sensor->GetType()<<
                              " specified in joint "<<sensor->ParentName()<<" is associated to link "<<
                              srdf_link_name<<RTT::endlog();
-        _force_torque_frame = srdf_link_name;
+        _force_torque_frame = urdf_joint->child_link_name;
         return true;
     }
     return false;
