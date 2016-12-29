@@ -18,7 +18,7 @@ force_torque_sensor::force_torque_sensor(const std::string& joint_srdf,
     {
         if(sensors[i]->Type().compare("force_torque") == 0){
             if(pairFrameToSensor(joint_srdf, sensors[i], gazebo_model, urdf_model))
-                _sensor = sensors[i];
+                _sensor = std::static_pointer_cast<gazebo::sensors::ForceTorqueSensor>(sensors[i]);
         }
 
         if(_sensor != NULL)
@@ -34,6 +34,18 @@ force_torque_sensor::force_torque_sensor(const std::string& joint_srdf,
     }
 }
 
+void force_torque_sensor::sense()
+{
+    if(_wrench_measured)
+    {
+
+        fillMsg();
+
+        if (_wrench_measured->orocos_port.connected())
+            _wrench_measured->orocos_port.write(_wrench_measured->sensor_feedback);
+    }
+}
+
 void force_torque_sensor::setFeedback()
 {
     _wrench_measured.reset(new wrench);
@@ -42,6 +54,7 @@ void force_torque_sensor::setFeedback()
     _ports.addPort(_wrench_measured->orocos_port);
 
     _wrench_measured->sensor_feedback = rstrt::dynamics::Wrench();
+    fillMsg();
     _wrench_measured->orocos_port.setDataSample(_wrench_measured->sensor_feedback);
 }
 

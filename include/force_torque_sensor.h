@@ -7,6 +7,7 @@
 #include <XBotCoreModel.h>
 #include <rtt/Port.hpp>
 #include <rst-rt/dynamics/Wrench.hpp>
+#include <gazebo-7/gazebo/sensors/ForceTorqueSensor.hh>
 
 template <class T> class sensorFeedback {
 public:
@@ -44,6 +45,7 @@ public:
                         RTT::DataFlowInterface& ports);
 
     bool isInited(){ return _inited;}
+    void sense();
 
 private:
     /**
@@ -54,7 +56,7 @@ private:
     /**
      * @brief _sensor is a pointer to the force/torque sensor related to the _force_torque_frame
      */
-    gazebo::sensors::SensorPtr _sensor;
+    gazebo::sensors::ForceTorqueSensorPtr _sensor;
 
     bool _inited;
 
@@ -73,6 +75,16 @@ private:
                            boost::shared_ptr<urdf::ModelInterface const> urdf_model);
 
     void setFeedback();
+
+    void fillMsg()
+    {
+        _wrench_measured->sensor_feedback.forces[0] = _sensor->Force().X();
+        _wrench_measured->sensor_feedback.forces[1] = _sensor->Force().Y();
+        _wrench_measured->sensor_feedback.forces[2] = _sensor->Force().Z();
+        _wrench_measured->sensor_feedback.torques[0] = _sensor->Torque().X();
+        _wrench_measured->sensor_feedback.torques[1] = _sensor->Torque().Y();
+        _wrench_measured->sensor_feedback.torques[2] = _sensor->Torque().Z();
+    }
 
 
 };
