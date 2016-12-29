@@ -58,6 +58,7 @@ protected:
     std::map<std::string, std::vector<std::string> > getKinematiChainsAndJoints();
     bool resetModelConfiguration();
     bool setInitialPosition(const std::string& kin_chain, const std::vector<double>& init);
+    std::vector<std::string> getForceTorqueSensorsFrames();
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;

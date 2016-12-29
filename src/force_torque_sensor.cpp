@@ -49,7 +49,7 @@ void force_torque_sensor::sense()
 void force_torque_sensor::setFeedback()
 {
     _wrench_measured.reset(new wrench);
-    _wrench_measured->orocos_port.setName(_force_torque_frame);
+    _wrench_measured->orocos_port.setName(_force_torque_frame+"_SensorFeedback");
     _wrench_measured->orocos_port.doc("Wrench measured from force/torque sensor.");
     _ports.addPort(_wrench_measured->orocos_port);
 

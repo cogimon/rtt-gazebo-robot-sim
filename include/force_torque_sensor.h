@@ -46,6 +46,7 @@ public:
 
     bool isInited(){ return _inited;}
     void sense();
+    std::string getFrame(){ return _force_torque_frame;}
 
 private:
     /**

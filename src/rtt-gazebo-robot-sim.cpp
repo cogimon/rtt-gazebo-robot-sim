@@ -51,6 +51,9 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("setInitialPosition", &robotSim::setInitialPosition,
                 this, RTT::ClientThread);
 
+    this->addOperation("getForceTorqueSensorsFrames", &robotSim::getForceTorqueSensorsFrames,
+                this, RTT::ClientThread);
+
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
@@ -272,6 +275,14 @@ bool robotSim::setInitialPosition(const std::string& kin_chain, const std::vecto
         a = a && resetModelConfiguration();
 
     return a;
+}
+
+std::vector<std::string> robotSim::getForceTorqueSensorsFrames()
+{
+    std::vector<std::string> tmp;
+    for(unsigned int i = 0; i < force_torque_sensors.size(); ++i)
+        tmp.push_back(force_torque_sensors[i].getFrame());
+    return tmp;
 }
 
 
