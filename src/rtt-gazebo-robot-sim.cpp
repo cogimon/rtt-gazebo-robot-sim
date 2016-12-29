@@ -3,6 +3,8 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
+#include <gazebo-7/gazebo/sensors/sensors.hh>
+
 
 using namespace cogimon;
 using namespace RTT;
@@ -199,6 +201,25 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
         }
     }
     RTT::log(RTT::Info) << "Kinematic Chains Initialized!" << RTT::endlog();
+
+
+
+    RTT::log(RTT::Info) << "Checking Sensors"<<RTT::endlog();
+
+    std::map<std::string,int> ft_srdf = _xbotcore_model.get_ft_sensors();
+    gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->
+            GetSensors();
+    for(std::map<std::string,int>::iterator i = ft_srdf.begin();
+        i != ft_srdf.end(); i++)
+    {
+        force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(), sensors);
+        if(ft.isInited())
+            force_torque_sensors.push_back(ft);
+    }
+
+
+
+
 
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
     return true;

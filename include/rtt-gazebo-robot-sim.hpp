@@ -26,6 +26,7 @@
 
 #include <control_modes.h>
 #include <kinematic_chain.h>
+#include <force_torque_sensor.h>
 #include <boost/shared_ptr.hpp>
 
 #include <srdfdom_advr/model.h>
@@ -68,6 +69,7 @@ protected:
     gazebo::physics::Link_V model_links_;
 
     std::map<std::string, boost::shared_ptr<KinematicChain>> kinematic_chains;
+    std::vector<force_torque_sensor> force_torque_sensors;
 
     bool _models_loaded;
     XBot::XBotCoreModel _xbotcore_model;
