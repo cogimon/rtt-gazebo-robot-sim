@@ -16,6 +16,9 @@ void robotSim::WorldUpdateBegin() {
 
     for(it = kinematic_chains.begin(); it != kinematic_chains.end(); it++)
         it->second->sense();
+
+    for(unsigned int i = 0; i < force_torque_sensors.size(); ++i)
+        force_torque_sensors[i].sense();
 }
 
 void robotSim::WorldUpdateEnd() {

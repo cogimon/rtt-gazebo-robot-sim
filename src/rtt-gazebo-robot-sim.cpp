@@ -3,6 +3,8 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
+#include <gazebo/sensors/sensors.hh>
+
 
 using namespace cogimon;
 using namespace RTT;
@@ -47,6 +49,9 @@ robotSim::robotSim(const std::string &name):
                 this, RTT::ClientThread);
 
     this->addOperation("setInitialPosition", &robotSim::setInitialPosition,
+                this, RTT::ClientThread);
+
+    this->addOperation("getForceTorqueSensorsFrames", &robotSim::getForceTorqueSensorsFrames,
                 this, RTT::ClientThread);
 
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
@@ -200,6 +205,26 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     }
     RTT::log(RTT::Info) << "Kinematic Chains Initialized!" << RTT::endlog();
 
+
+
+    RTT::log(RTT::Info) << "Checking Sensors"<<RTT::endlog();
+
+    std::map<std::string,int> ft_srdf = _xbotcore_model.get_ft_sensors();
+    gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->
+            GetSensors();
+    for(std::map<std::string,int>::iterator i = ft_srdf.begin();
+        i != ft_srdf.end(); i++)
+    {
+        force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(), sensors,
+                               *(this->ports()));
+        if(ft.isInited())
+            force_torque_sensors.push_back(ft);
+    }
+
+
+
+
+
     RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
     return true;
 }
@@ -252,6 +277,14 @@ bool robotSim::setInitialPosition(const std::string& kin_chain, const std::vecto
     return a;
 }
 
+std::vector<std::string> robotSim::getForceTorqueSensorsFrames()
+{
+    std::vector<std::string> tmp;
+    for(unsigned int i = 0; i < force_torque_sensors.size(); ++i)
+        tmp.push_back(force_torque_sensors[i].getFrame());
+    return tmp;
+}
+
 robotSim::~robotSim() {
     // Disconnect slots
     gazebo::event::Events::DisconnectWorldUpdateBegin(world_begin);
@@ -261,4 +294,3 @@ robotSim::~robotSim() {
 ORO_CREATE_COMPONENT_LIBRARY()
 //ORO_CREATE_COMPONENT(cogimon::robotSim)
 ORO_LIST_COMPONENT_TYPE(cogimon::robotSim)
-
