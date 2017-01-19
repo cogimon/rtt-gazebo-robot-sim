@@ -3,7 +3,7 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
-#include <gazebo-7/gazebo/sensors/sensors.hh>
+#include <gazebo/sensors/sensors.hh>
 
 
 using namespace cogimon;

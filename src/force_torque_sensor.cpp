@@ -1,5 +1,5 @@
 #include <force_torque_sensor.h>
-#include <gazebo-7/gazebo/sensors/Sensor.hh>
+#include <gazebo/sensors/Sensor.hh>
 #include <rtt/Logger.hpp>
 
 force_torque_sensor::force_torque_sensor(const std::string& joint_srdf,

@@ -7,7 +7,7 @@
 #include <XBotCoreModel.h>
 #include <rtt/Port.hpp>
 #include <rst-rt/dynamics/Wrench.hpp>
-#include <gazebo-7/gazebo/sensors/ForceTorqueSensor.hh>
+#include <gazebo/sensors/ForceTorqueSensor.hh>
 
 template <class T> class sensorFeedback {
 public:
