@@ -42,7 +42,7 @@ public:
     void updateHook();
     void WorldUpdateBegin();
     void WorldUpdateEnd();
-    virtual ~robotSim() {}
+    ~robotSim();
 
 protected:
     bool getModel(const std::string& model_name);

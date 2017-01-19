@@ -252,7 +252,11 @@ bool robotSim::setInitialPosition(const std::string& kin_chain, const std::vecto
     return a;
 }
 
-
+robotSim::~robotSim() {
+    // Disconnect slots
+    gazebo::event::Events::DisconnectWorldUpdateBegin(world_begin);
+    gazebo::event::Events::DisconnectWorldUpdateEnd(world_end);
+}
 
 ORO_CREATE_COMPONENT_LIBRARY()
 //ORO_CREATE_COMPONENT(cogimon::robotSim)
