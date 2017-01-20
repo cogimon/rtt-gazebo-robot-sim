@@ -18,7 +18,7 @@ force_torque_sensor::force_torque_sensor(const std::string& joint_srdf,
     {
         if(sensors[i]->Type().compare("force_torque") == 0){
             if(pairFrameToSensor(joint_srdf, sensors[i], gazebo_model, urdf_model))
-                _sensor = std::static_pointer_cast<gazebo::sensors::ForceTorqueSensor>(sensors[i]);
+                _sensor = std::static_pointer_cast<gazebo::sensors::ForceTorqueSensor>(sensors[i]); 
         }
 
         if(_sensor != NULL)

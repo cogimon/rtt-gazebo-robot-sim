@@ -212,10 +212,18 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     std::map<std::string,int> ft_srdf = _xbotcore_model.get_ft_sensors();
     gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->
             GetSensors();
+
+    gazebo::sensors::Sensor_V sensors_attached_to_robot;
+    for(unsigned int i = 0; i < sensors.size(); ++i){
+        if(sensors[i]->ScopedName().find("::"+model->GetName()+"::") != std::string::npos)
+            sensors_attached_to_robot.push_back(sensors[i]);
+    }
+
     for(std::map<std::string,int>::iterator i = ft_srdf.begin();
         i != ft_srdf.end(); i++)
     {
-        force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(), sensors,
+        force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(),
+                               sensors_attached_to_robot,
                                *(this->ports()));
         if(ft.isInited())
             force_torque_sensors.push_back(ft);
