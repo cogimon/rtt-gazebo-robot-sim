@@ -286,11 +286,13 @@ void KinematicChain::sense()
 					_joint_names[i])->GetVelocity(0);
 
 		for (unsigned int i = 0; i < _number_of_dofs; ++i) {
-			gazebo::physics::JointWrench w =
-					_model->GetJoint(_joint_names[i])->GetForceTorque(0u);
-			gazebo::math::Vector3 a =
-					_model->GetJoint(_joint_names[i])->GetLocalAxis(0u);
-			full_feedback->joint_feedback.torques(i) = a.Dot(w.body1Torque);
+//			gazebo::physics::JointWrench w =
+//					_model->GetJoint(_joint_names[i])->GetForceTorque(0u);
+//			gazebo::math::Vector3 a =
+//					_model->GetJoint(_joint_names[i])->GetLocalAxis(0u);
+//			full_feedback->joint_feedback.torques(i) = a.Dot(w.body1Torque);
+            full_feedback->joint_feedback.torques(i) =
+                    _model->GetJoint(_joint_names[i])->GetForce(0u);
 		}
 
 		if (full_feedback->orocos_port.connected())
