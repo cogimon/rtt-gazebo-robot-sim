@@ -207,9 +207,14 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
 
 
-    RTT::log(RTT::Info) << "Checking Sensors"<<RTT::endlog();
-
+    RTT::log(RTT::Info) << "Checking Sensors (URDF/SRDF)"<<RTT::endlog();
     std::map<std::string,int> ft_srdf = _xbotcore_model.get_ft_sensors();
+
+
+    RTT::log(RTT::Info) << "Force Update of SensorManager (before accessing sensors)!" << RTT::endlog();
+    gazebo::sensors::SensorManager::Instance()->Update(true);
+
+    RTT::log(RTT::Info) << "Checking Sensors (Gazebo)"<<RTT::endlog();
     gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->
             GetSensors();
 
@@ -233,7 +238,7 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
 
 
-    RTT::log(RTT::Warning) << "Done configuring component" << RTT::endlog();
+    RTT::log(RTT::Warning) << "Done Configuring Component" << RTT::endlog();
     return true;
 }
 
