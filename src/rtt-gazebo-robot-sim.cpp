@@ -313,8 +313,8 @@ rstrt::geometry::Pose robotSim::getLinkPoseGazebo(const std::string &link_name)
     if(link)
     {
         gazebo::math::Pose tmp = link->GetWorldPose();
-        rstrt::geometry::Pose pose(tmp.pos.x, tmp.pos.y, tmp.pos.z,
-                                   tmp.rot.x, tmp.rot.y, tmp.rot.z, tmp.rot.w);
+        rstrt::geometry::Pose pose(tmp.pos.x, tmp.pos.y, tmp.pos.z, link_name,
+                                   tmp.rot.w, tmp.rot.x, tmp.rot.y, tmp.rot.z, link_name);
         return pose;
     }
     else
