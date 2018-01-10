@@ -34,6 +34,8 @@
 #include <parser.h>
 #include <XBotCoreModel.h>
 
+#include <rst-rt/geometry/Pose.hpp>
+
 namespace cogimon {
 
 class robotSim: public RTT::TaskContext {
@@ -59,6 +61,7 @@ protected:
     bool resetModelConfiguration();
     bool setInitialPosition(const std::string& kin_chain, const std::vector<double>& init);
     std::vector<std::string> getForceTorqueSensorsFrames();
+    rstrt::geometry::Pose getLinkPoseGazebo(const std::string& link_name);
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
@@ -76,6 +79,8 @@ protected:
     XBot::XBotCoreModel _xbotcore_model;
 
     gain_parser gains;
+
+
 
 private:
     bool is_configured;

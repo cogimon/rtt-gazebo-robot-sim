@@ -54,6 +54,9 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getForceTorqueSensorsFrames", &robotSim::getForceTorqueSensorsFrames,
                 this, RTT::ClientThread);
 
+    this->addOperation("getLinkPoseGazebo", &robotSim::getLinkPoseGazebo,
+                this, RTT::ClientThread);
+
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
@@ -302,6 +305,24 @@ robotSim::~robotSim() {
     // Disconnect slots
     gazebo::event::Events::DisconnectWorldUpdateBegin(world_begin);
     gazebo::event::Events::DisconnectWorldUpdateEnd(world_end);
+}
+
+rstrt::geometry::Pose robotSim::getLinkPoseGazebo(const std::string &link_name)
+{
+    gazebo::physics::LinkPtr link = model->GetLink(link_name);
+    if(link)
+    {
+        gazebo::math::Pose tmp = link->GetWorldPose();
+        rstrt::geometry::Pose pose(tmp.pos.x, tmp.pos.y, tmp.pos.z,
+                                   tmp.rot.x, tmp.rot.y, tmp.rot.z, tmp.rot.w);
+        return pose;
+    }
+    else
+    {
+        rstrt::geometry::Pose pose;
+        RTT::log(RTT::Error)<<"Link "<<link_name<<" does not exists!"<<RTT::endlog();
+        return pose;
+    }
 }
 
 ORO_CREATE_COMPONENT_LIBRARY()
