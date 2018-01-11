@@ -10,7 +10,8 @@
 #include <gazebo/sensors/ForceTorqueSensor.hh>
 
 #ifdef USE_INTROSPECTION
-#include <rtt-core-extensions/rtt-introspection-base.hpp>
+#include <rtt-core-extensions0.2/rtt-core-extensions/rtt-introspection-base.hpp>
+//#include <rtt-core-extensions/rtt-introspection-base.hpp>
 #endif
 
 template <class T> class sensorFeedback {

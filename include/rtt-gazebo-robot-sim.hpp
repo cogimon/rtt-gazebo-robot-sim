@@ -38,7 +38,8 @@
 #include <rst-rt/kinematics/Twist.hpp>
 
 #ifdef USE_INTROSPECTION
-#include <rtt-core-extensions/rtt-introspection-base.hpp>
+#include <rtt-core-extensions0.2/rtt-core-extensions/rtt-introspection-base.hpp>
+//#include <rtt-core-extensions/rtt-introspection-base.hpp>
 #include <rst-rt/monitoring/CallTraceSample.hpp>
 #endif
 
