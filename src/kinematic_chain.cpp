@@ -2,12 +2,19 @@
 
 using namespace cogimon;
 KinematicChain::KinematicChain(const std::string& chain_name, const std::vector<std::string> &joint_names, RTT::DataFlowInterface& ports,
-                               gazebo::physics::ModelPtr model):
+                               gazebo::physics::ModelPtr model
+#ifdef USE_INTROSPECTION
+                               ,cogimon::RTTIntrospectionBase* introBase
+#endif
+                               ):
     _kinematic_chain_name(chain_name),
     _ports(ports),
     _model(model),
     _current_control_mode(std::string(ControlModes::JointPositionCtrl)),
     _joint_names(joint_names)
+#ifdef USE_INTROSPECTION
+    ,_introBase(introBase)
+#endif
 {
     RTT::log(RTT::Info) << "Creating Kinematic Chain " << chain_name << RTT::endlog();
 
@@ -296,25 +303,48 @@ void KinematicChain::sense()
 		}
 
 		if (full_feedback->orocos_port.connected())
+        #ifdef USE_INTROSPECTION
+			_introBase->writePort(full_feedback->orocos_port,full_feedback->joint_feedback);
+        #else
 			full_feedback->orocos_port.write(full_feedback->joint_feedback);
+        #endif
 	}
 }
 
 void KinematicChain::getCommand()
 {
     if(_current_control_mode == ControlModes::JointTorqueCtrl)
+    #ifdef USE_INTROSPECTION
+        torque_controller->joint_cmd_fs = _introBase->readPort(torque_controller->orocos_port,
+                    torque_controller->joint_cmd);
+    #else
         torque_controller->joint_cmd_fs = torque_controller->orocos_port.readNewest(
                     torque_controller->joint_cmd);
+    #endif
     else if(_current_control_mode == ControlModes::JointPositionCtrl)
+    #ifdef USE_INTROSPECTION
+        position_controller->joint_cmd_fs = _introBase->readPort(position_controller->orocos_port,
+                    position_controller->joint_cmd);
+    #else
         position_controller->joint_cmd_fs = position_controller->orocos_port.readNewest(
                     position_controller->joint_cmd);
+    #endif
     else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
+    #ifdef USE_INTROSPECTION
+        position_controller->joint_cmd_fs = _introBase->readPort(position_controller->orocos_port,
+                    position_controller->joint_cmd);
+        impedance_controller->joint_cmd_fs = _introBase->readPort(impedance_controller->orocos_port,
+                    impedance_controller->joint_cmd);
+        torque_controller->joint_cmd_fs = _introBase->readPort(torque_controller->orocos_port,
+                    torque_controller->joint_cmd);
+    #else
         position_controller->joint_cmd_fs = position_controller->orocos_port.readNewest(
                     position_controller->joint_cmd);
         impedance_controller->joint_cmd_fs = impedance_controller->orocos_port.readNewest(
                     impedance_controller->joint_cmd);
         torque_controller->joint_cmd_fs = torque_controller->orocos_port.readNewest(
                     torque_controller->joint_cmd);
+    #endif
     }
 }
 

@@ -12,7 +12,11 @@ using namespace RTT::os;
 using namespace Eigen;
 
 robotSim::robotSim(const std::string &name):
+#ifdef USE_INTROSPECTION
+    cogimon::RTTIntrospectionBase(name),
+#else
     TaskContext(name),
+#endif
     is_configured(false),
     _models_loaded(false)
 {
@@ -158,10 +162,33 @@ bool robotSim::getModel(const std::string& model_name) {
     return bool(model);
 }
 
+#ifdef USE_INTROSPECTION
+void robotSim::updateHookInternal() {
+#else
 void robotSim::updateHook() {
+#endif
+
 }
 
+#ifdef USE_INTROSPECTION
+bool robotSim::startHookInternal() {
+    return true;
+}
+
+void robotSim::stopHookInternal() {
+
+}
+
+void robotSim::cleanupHookInternal() {
+
+}
+#endif
+
+#ifdef USE_INTROSPECTION
+bool robotSim::configureHookInternal() {
+#else
 bool robotSim::configureHook() {
+#endif
     this->is_configured = gazeboConfigureHook(model);
     return is_configured;
 }
@@ -193,7 +220,11 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
         kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
             chain_name, boost::shared_ptr<KinematicChain>(
-                new KinematicChain(chain_name, enabled_joints_in_chain, *(this->ports()), model))));
+                new KinematicChain(chain_name, enabled_joints_in_chain, *(this->ports()), model
+#ifdef USE_INTROSPECTION
+                ,this
+#endif
+                ))));
     }
 
     RTT::log(RTT::Info) << "Kinematic Chains map created!" << RTT::endlog();
@@ -232,7 +263,11 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
     {
         force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(),
                                sensors_attached_to_robot,
-                               *(this->ports()));
+                               *(this->ports())
+    #ifdef USE_INTROSPECTION
+                               ,this
+    #endif
+                               );
         if(ft.isInited())
             force_torque_sensors.push_back(ft);
     }

@@ -9,6 +9,10 @@
 #include <rst-rt/dynamics/Wrench.hpp>
 #include <gazebo/sensors/ForceTorqueSensor.hh>
 
+#ifdef USE_INTROSPECTION
+#include <rtt-core-extensions/rtt-introspection-base.hpp>
+#endif
+
 template <class T> class sensorFeedback {
 public:
     sensorFeedback() {
@@ -42,7 +46,11 @@ public:
     force_torque_sensor(const std::string& joint_srdf, gazebo::physics::ModelPtr gazebo_model,
                         boost::shared_ptr<urdf::ModelInterface const> urdf_model,
                         gazebo::sensors::Sensor_V sensors,
-                        RTT::DataFlowInterface& ports);
+                        RTT::DataFlowInterface& ports
+#ifdef USE_INTROSPECTION
+                        ,cogimon::RTTIntrospectionBase* introBase
+#endif
+                        );
 
     bool isInited(){ return _inited;}
     void sense();
@@ -87,7 +95,9 @@ private:
         _wrench_measured->sensor_feedback.torques[2] = _sensor->Torque().Z();
     }
 
-
+#ifdef USE_INTROSPECTION
+    cogimon::RTTIntrospectionBase* _introBase;
+#endif
 };
 
 #endif

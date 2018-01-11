@@ -6,11 +6,18 @@ force_torque_sensor::force_torque_sensor(const std::string& joint_srdf,
                                          gazebo::physics::ModelPtr gazebo_model,
                                          boost::shared_ptr<urdf::ModelInterface const> urdf_model,
                                          gazebo::sensors::Sensor_V sensors,
-                                         RTT::DataFlowInterface& ports):
+                                         RTT::DataFlowInterface& ports
+#ifdef USE_INTROSPECTION
+                                        ,cogimon::RTTIntrospectionBase* introBase
+#endif
+                                         ):
     _force_torque_frame(""),
     _sensor(),
     _inited(false),
     _ports(ports)
+#ifdef USE_INTROSPECTION
+    ,_introBase(introBase)
+#endif
 {
     RTT::log(RTT::Info) << "Creating Force/Torque Sensor "<<RTT::endlog();
 
@@ -42,7 +49,11 @@ void force_torque_sensor::sense()
         fillMsg();
 
         if (_wrench_measured->orocos_port.connected())
+#ifdef USE_INTROSPECTION
+            _introBase->writePort(_wrench_measured->orocos_port, _wrench_measured->sensor_feedback);
+#else
             _wrench_measured->orocos_port.write(_wrench_measured->sensor_feedback);
+#endif
     }
 }
 

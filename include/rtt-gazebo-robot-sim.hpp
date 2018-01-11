@@ -36,13 +36,29 @@
 
 #include <rst-rt/geometry/Pose.hpp>
 
+#ifdef USE_INTROSPECTION
+#include <rtt-core-extensions/rtt-introspection-base.hpp>
+#endif
+
 namespace cogimon {
 
+#ifdef USE_INTROSPECTION
+class robotSim: public cogimon::RTTIntrospectionBase {
+#else
 class robotSim: public RTT::TaskContext {
+#endif
 public:
     robotSim(std::string const& name);
+    #ifdef USE_INTROSPECTION
+    bool configureHookInternal();
+    void updateHookInternal();
+	bool startHookInternal();
+	void stopHookInternal();
+	void cleanupHookInternal();
+    #else
     bool configureHook();
     void updateHook();
+    #endif
     void WorldUpdateBegin();
     void WorldUpdateEnd();
     ~robotSim();

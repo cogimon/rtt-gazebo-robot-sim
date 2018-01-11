@@ -15,6 +15,9 @@
 
 #include <parser.h>
 
+#ifdef USE_INTROSPECTION
+#include <rtt-core-extensions/rtt-introspection-base.hpp>
+#endif
 
 using namespace rstrt::kinematics;
 using namespace rstrt::dynamics;
@@ -31,7 +34,11 @@ typedef cogimon::jointFeedback<JointState> full_fbk;
 class KinematicChain {
 public:
     KinematicChain(const std::string& chain_name, const std::vector<std::string>& joint_names,
-                   RTT::DataFlowInterface& ports, gazebo::physics::ModelPtr model);
+                   RTT::DataFlowInterface& ports, gazebo::physics::ModelPtr model
+#ifdef USE_INTROSPECTION
+                   ,cogimon::RTTIntrospectionBase* introBase
+#endif
+                   );
     ~KinematicChain(){}
 
     std::string getKinematicChainName();
@@ -80,7 +87,10 @@ private:
     void setInitialImpedance();
 
     boost::shared_ptr<cogimon::gains> _gains;
-
+    
+#ifdef USE_INTROSPECTION
+    cogimon::RTTIntrospectionBase* _introBase;
+#endif
 };
 
 
