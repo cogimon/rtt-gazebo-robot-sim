@@ -58,7 +58,7 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getForceTorqueSensorsFrames", &robotSim::getForceTorqueSensorsFrames,
                 this, RTT::ClientThread);
 
-    this->addOperation("getLinkPoseGazebo", &robotSim::getLinkPoseGazebo,
+    this->addOperation("getLinkPoseVelocityGazebo", &robotSim::getLinkPoseVelocityGazebo,
                 this, RTT::ClientThread);
 
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
@@ -344,22 +344,31 @@ robotSim::~robotSim() {
     gazebo::event::Events::DisconnectWorldUpdateEnd(world_end);
 }
 
-rstrt::geometry::Pose robotSim::getLinkPoseGazebo(const std::string &link_name)
+bool robotSim::getLinkPoseVelocityGazebo(const std::string& link_name, rstrt::geometry::Pose& pose,
+                       rstrt::kinematics::Twist& twist)
 {
     gazebo::physics::LinkPtr link = model->GetLink(link_name);
     if(link)
     {
         gazebo::math::Pose tmp = link->GetWorldPose();
-        rstrt::geometry::Pose pose(tmp.pos.x, tmp.pos.y, tmp.pos.z, link_name,
+        rstrt::geometry::Pose tmp_pose(tmp.pos.x, tmp.pos.y, tmp.pos.z, link_name,
                                    tmp.rot.w, tmp.rot.x, tmp.rot.y, tmp.rot.z, link_name);
-        return pose;
+        pose = tmp_pose;
+
+        gazebo::math::Vector3 vel =  link->GetWorldLinearVel();
+        gazebo::math::Vector3 omega = link->GetWorldAngularVel();
+        twist.linear[0] = vel.x;
+        twist.linear[1] = vel.y;
+        twist.linear[2] = vel.z;
+        twist.angular[0] = omega.x;
+        twist.angular[1] = omega.y;
+        twist.angular[2] = omega.z;
+
+        return true;
     }
-    else
-    {
-        rstrt::geometry::Pose pose;
-        RTT::log(RTT::Error)<<"Link "<<link_name<<" does not exists!"<<RTT::endlog();
-        return pose;
-    }
+
+    RTT::log(RTT::Error)<<"Link "<<link_name<<" does not exists!"<<RTT::endlog();
+    return false;
 }
 
 ORO_CREATE_COMPONENT_LIBRARY()

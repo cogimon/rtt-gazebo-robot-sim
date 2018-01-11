@@ -35,6 +35,7 @@
 #include <XBotCoreModel.h>
 
 #include <rst-rt/geometry/Pose.hpp>
+#include <rst-rt/kinematics/Twist.hpp>
 
 #ifdef USE_INTROSPECTION
 #include <rtt-core-extensions/rtt-introspection-base.hpp>
@@ -78,7 +79,9 @@ protected:
     bool resetModelConfiguration();
     bool setInitialPosition(const std::string& kin_chain, const std::vector<double>& init);
     std::vector<std::string> getForceTorqueSensorsFrames();
-    rstrt::geometry::Pose getLinkPoseGazebo(const std::string& link_name);
+    bool getLinkPoseVelocityGazebo(const std::string& link_name,
+                           rstrt::geometry::Pose& pose,
+                           rstrt::kinematics::Twist& twist);
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
