@@ -31,6 +31,8 @@ include_directories(BEFORE SYSTEM ${RST-RT_INCLUDE_DIRS})
 add_definitions(${RST-RT_CFLAGS})
 link_directories(${RST-RT_LIBRARY_DIR} ${RST-RT_LIBRARY_DIRS})
 
+option(DISABLE_INTROSPECTION "Disable introspection features" TRUE)
+
 if (DISABLE_INTROSPECTION)
     message(STATUS "###################################################")
     message(STATUS "### RTT-CORE-EXTENSIONS Introspection disabled! ###")
