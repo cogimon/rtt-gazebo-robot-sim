@@ -397,8 +397,10 @@ std::string KinematicChain::printKinematicChainInformation()
 
 bool KinematicChain::setInitialJointConfiguration(const std::vector<double>& home)
 {
-    if(home.size() != _initial_joints_configuration.size())
+    if(home.size() != _initial_joints_configuration.size()){
+	RTT::log(RTT::Error)<<"Configuration size mismatch!"<<RTT::endlog();
         return false;
+    }
     _initial_joints_configuration = home;
     return true;
 }
