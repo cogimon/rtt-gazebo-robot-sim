@@ -66,7 +66,9 @@ robotSim::robotSim(const std::string &name):
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
             boost::bind(&robotSim::WorldUpdateEnd, this));
 
-
+#ifdef USE_INTROSPECTION
+    cts_worldUpdate = rstrt::monitoring::CallTraceSample("WorldUpdate()", this->getName(), 0.0, rstrt::monitoring::CallTraceSample::CALL_UNIVERSAL);
+#endif
 }
 
 bool robotSim::resetModelConfiguration()

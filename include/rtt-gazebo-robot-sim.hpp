@@ -38,6 +38,7 @@
 
 #ifdef USE_INTROSPECTION
 #include <rtt-core-extensions/rtt-introspection-base.hpp>
+#include <rst-rt/monitoring/CallTraceSample.hpp>
 #endif
 
 namespace cogimon {
@@ -96,7 +97,9 @@ protected:
 
     gain_parser gains;
 
-
+    #ifdef USE_INTROSPECTION
+    rstrt::monitoring::CallTraceSample cts_worldUpdate;
+    #endif
 
 private:
     bool is_configured;
