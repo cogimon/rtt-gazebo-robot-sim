@@ -82,7 +82,13 @@ bool force_torque_sensor::pairFrameToSensor(const std::string& joint_srdf,
     boost::shared_ptr<const urdf::Joint> urdf_joint = urdf_model->getJoint(joint_srdf);
     std::string srdf_link_name = urdf_joint->child_link_name;
     if(sensor_link_name.compare(srdf_link_name) == 0){
-        RTT::log(RTT::Info)<<"Sensor "<<sensor->Name()<<" of type "<<sensor->GetType()<<
+        std::string type = "";
+#if GAZEBO_MAJOR_VERSION >= 8
+        type = sensor->Type();
+#else
+        type = sensor->GetType();
+#endif
+        RTT::log(RTT::Info)<<"Sensor "<<sensor->Name()<<" of type "<<type<<
                              " specified in joint "<<sensor->ParentName()<<" is associated to link "<<
                              srdf_link_name<<RTT::endlog();
         _force_torque_frame = srdf_link_name;
@@ -93,7 +99,13 @@ bool force_torque_sensor::pairFrameToSensor(const std::string& joint_srdf,
     /// of the same link
     srdf_link_name = urdf_joint->parent_link_name;
     if(sensor_link_name.compare(srdf_link_name) == 0){
-        RTT::log(RTT::Info)<<"Sensor "<<sensor->Name()<<" of type "<<sensor->GetType()<<
+        std::string type = "";
+#if GAZEBO_MAJOR_VERSION >= 8
+        type = sensor->Type();
+#else
+        type = sensor->GetType();
+#endif
+        RTT::log(RTT::Info)<<"Sensor "<<sensor->Name()<<" of type "<<type<<
                              " specified in joint "<<sensor->ParentName()<<" is associated to link "<<
                              srdf_link_name<<RTT::endlog();
         _force_torque_frame = urdf_joint->child_link_name;
