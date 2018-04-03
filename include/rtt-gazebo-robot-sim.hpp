@@ -27,6 +27,7 @@
 #include <control_modes.h>
 #include <kinematic_chain.h>
 #include <force_torque_sensor.h>
+#include <imu.h>
 #include <boost/shared_ptr.hpp>
 
 #include <srdfdom_advr/model.h>
@@ -83,6 +84,7 @@ protected:
     bool getLinkPoseVelocityGazebo(const std::string& link_name,
                            rstrt::geometry::Pose& pose,
                            rstrt::kinematics::Twist& twist);
+    std::vector<std::string> getIMUSensorsFrames();
 
     gazebo::physics::ModelPtr model;
     gazebo::event::ConnectionPtr world_begin;
@@ -95,6 +97,7 @@ protected:
 
     std::map<std::string, boost::shared_ptr<KinematicChain>> kinematic_chains;
     std::vector<force_torque_sensor> force_torque_sensors;
+    std::vector<imu_sensor> imu_sensors;
 
     bool _models_loaded;
     XBot::XBotCoreModel _xbotcore_model;

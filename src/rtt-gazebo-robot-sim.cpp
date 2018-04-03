@@ -61,6 +61,9 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getLinkPoseVelocityGazebo", &robotSim::getLinkPoseVelocityGazebo,
                 this, RTT::ClientThread);
 
+    this->addOperation("getIMUSensorsFrames", &robotSim::getIMUSensorsFrames,
+                this, RTT::ClientThread);
+
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
@@ -245,14 +248,14 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
     RTT::log(RTT::Info) << "Checking Sensors (URDF/SRDF)"<<RTT::endlog();
     std::map<std::string,int> ft_srdf = _xbotcore_model.get_ft_sensors();
+    std::map<std::string,int> imu_srdf = _xbotcore_model.get_imu_sensors();
 
 
     RTT::log(RTT::Info) << "Force Update of SensorManager (before accessing sensors)!" << RTT::endlog();
     gazebo::sensors::SensorManager::Instance()->Update(true);
 
     RTT::log(RTT::Info) << "Checking Sensors (Gazebo)"<<RTT::endlog();
-    gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->
-            GetSensors();
+    gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->GetSensors();
 
     gazebo::sensors::Sensor_V sensors_attached_to_robot;
     for(unsigned int i = 0; i < sensors.size(); ++i){
@@ -260,8 +263,7 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
             sensors_attached_to_robot.push_back(sensors[i]);
     }
 
-    for(std::map<std::string,int>::iterator i = ft_srdf.begin();
-        i != ft_srdf.end(); i++)
+    for(std::map<std::string,int>::iterator i = ft_srdf.begin(); i != ft_srdf.end(); i++)
     {
         force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(),
                                sensors_attached_to_robot,
@@ -274,7 +276,11 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
             force_torque_sensors.push_back(ft);
     }
 
-
+    for(std::map<std::string,int>::iterator i = imu_srdf.begin(); i != imu_srdf.end(); ++i){
+        imu_sensor imu_(i->first,sensors_attached_to_robot,*(this->ports()));
+        if(imu_.isInited())
+            imu_sensors.push_back(imu_);
+    }
 
 
 
@@ -335,6 +341,14 @@ std::vector<std::string> robotSim::getForceTorqueSensorsFrames()
     std::vector<std::string> tmp;
     for(unsigned int i = 0; i < force_torque_sensors.size(); ++i)
         tmp.push_back(force_torque_sensors[i].getFrame());
+    return tmp;
+}
+
+std::vector<std::string> robotSim::getIMUSensorsFrames()
+{
+    std::vector<std::string> tmp;
+    for(unsigned int i = 0; i < imu_sensors.size(); ++i)
+        tmp.push_back(imu_sensors[i].getFrame());
     return tmp;
 }
 

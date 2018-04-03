@@ -94,7 +94,7 @@ ADD_LIBRARY(gain_parser SHARED src/parser.cpp)
 TARGET_LINK_LIBRARIES(gain_parser ${TINYXML_LIBRARIES})
 
 orocos_component(${PROJECT_NAME} src/rtt-gazebo-robot-sim.cpp src/rtt-gazebo-robot-sim_hooks.cpp src/kinematic_chain.cpp
- src/force_torque_sensor.cpp ${rtt_gazebo_robot_sim_INCLUDES})
+ src/force_torque_sensor.cpp src/imu.cpp ${rtt_gazebo_robot_sim_INCLUDES})
 set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS RTT_COMPONENT)
 
 target_link_libraries(${PROJECT_NAME}

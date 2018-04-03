@@ -26,6 +26,9 @@ void robotSim::WorldUpdateBegin() {
     for(unsigned int i = 0; i < force_torque_sensors.size(); ++i)
         force_torque_sensors[i].sense();
 
+    for(unsigned int i = 0; i < imu_sensors.size(); ++i)
+        imu_sensors[i].sense();
+
 #ifdef USE_INTROSPECTION
     } else {
         std::map<std::string, boost::shared_ptr<KinematicChain>>::iterator it;
@@ -37,6 +40,9 @@ void robotSim::WorldUpdateBegin() {
 
         for(unsigned int i = 0; i < force_torque_sensors.size(); ++i)
             force_torque_sensors[i].sense();
+
+        for(unsigned int i = 0; i < imu_sensors.size(); ++i)
+            imu_sensors[i].sense();
     }
 #endif
 }
