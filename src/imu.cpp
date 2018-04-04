@@ -1,6 +1,6 @@
 #include <imu.h>
 
-imu_sensor::imu_sensor(const string &imu_frame,
+imu_sensor::imu_sensor(const std::string &imu_frame,
                        gazebo::sensors::Sensor_V sensors, RTT::DataFlowInterface &ports):
         _imu_frame(imu_frame),
         _sensor(),
