@@ -4,7 +4,7 @@
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
 #include <gazebo/common/common.hh>
-#include <XBotCoreModel.h>
+#include <XBotCoreModel/XBotCoreModel.h>
 #include <rtt/Port.hpp>
 #include <rst-rt/dynamics/Wrench.hpp>
 #include <gazebo/sensors/ForceTorqueSensor.hh>

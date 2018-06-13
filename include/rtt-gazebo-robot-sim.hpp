@@ -33,7 +33,7 @@
 #include <srdfdom_advr/model.h>
 #include <urdf/model.h>
 #include <parser.h>
-#include <XBotCoreModel.h>
+#include <XBotCoreModel/XBotCoreModel.h>
 
 #include <rst-rt/geometry/Pose.hpp>
 #include <rst-rt/kinematics/Twist.hpp>
