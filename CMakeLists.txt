@@ -24,6 +24,7 @@ find_package(orocos_kdl REQUIRED)
 find_package(Boost COMPONENTS thread REQUIRED)
 find_package(srdfdom_advr REQUIRED)
 find_package(XBotInterface REQUIRED)
+find_package(XBotCoreModel REQUIRED)
 
 find_package(RST-RT REQUIRED)
 message(STATUS "RST-RT version: ${RST-RT_VERSION}")
@@ -85,6 +86,7 @@ include_directories(
     ${srdfdom_advr_INCLUDE_DIRS}
     ${XBotInterface_INCLUDE_DIRS}
     ${RTT-CORE-EXTENSIONS_INCLUDE_DIRS}
+    ${XBotCoreModel_INCLUDE_DIRS}
 )
 
 file(GLOB_RECURSE rtt_gazebo_robot_sim_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include" *.h)
@@ -109,6 +111,7 @@ target_link_libraries(${PROJECT_NAME}
    ${srdfdom_advr_LIBRARIES}
    ${XBotInterface_LIBRARIES}
    ${RTT-CORE-EXTENSIONS_LIBRARIES}
+   ${XBotCoreModel_LIBRARIES}
 )
 
 install (TARGETS gain_parser
