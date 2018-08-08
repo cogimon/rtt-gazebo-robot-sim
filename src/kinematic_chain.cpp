@@ -49,6 +49,12 @@ bool KinematicChain::initKinematicChain(const cogimon::gains& gains_)
         else
             RTT::log(RTT::Info)<<std::string(ControlModes::JointPositionCtrl)<<" activated!"<<RTT::endlog();
     }
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointVelocityCtrl)) != controllers.end()){
+        if(!setController(std::string(ControlModes::JointVelocityCtrl)))
+            return false;
+        else
+            RTT::log(RTT::Info)<<std::string(ControlModes::JointVelocityCtrl)<<" activated!"<<RTT::endlog();
+    }
     if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointImpedanceCtrl)) != controllers.end()){
         if(!setController(std::string(ControlModes::JointImpedanceCtrl)))
             return false;
@@ -66,7 +72,20 @@ bool KinematicChain::initKinematicChain(const cogimon::gains& gains_)
     RTT::log(RTT::Info)<<"Full feedback activated!"<<RTT::endlog();
 
     if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointPositionCtrl)) != controllers.end()){
-        if(!initGazeboJointController())
+        if(!initGazeboJointController(std::string(ControlModes::JointPositionCtrl)))
+        {
+            RTT::log(RTT::Error) << "Joint Controller can NOT be initialized, exiting" << RTT::endlog();
+            return false;
+        }
+        else
+        {
+            RTT::log(RTT::Info)<<"Gazebo Joint Controlled inited!"<<RTT::endlog();
+            setInitialPosition(false);
+            RTT::log(RTT::Info)<<"Initial Position set!"<<RTT::endlog();
+        }
+    }
+    if(std::find(controllers.begin(), controllers.end(), std::string(ControlModes::JointVelocityCtrl)) != controllers.end()){
+        if(!initGazeboJointController(std::string(ControlModes::JointVelocityCtrl)))
         {
             RTT::log(RTT::Error) << "Joint Controller can NOT be initialized, exiting" << RTT::endlog();
             return false;
@@ -145,15 +164,26 @@ void KinematicChain::setFeedBack()
 bool KinematicChain::setController(const std::string& controller_type)
 {
     if(controller_type == ControlModes::JointPositionCtrl){
-    	position_controller.reset(new position_ctrl);
-		position_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointPositionCtrl);
-		position_controller->orocos_port.doc("Input for JointPosition-cmds from Orocos to Gazebo world.");
-		_ports.addPort(position_controller->orocos_port);
+        position_controller.reset(new position_ctrl);
+                position_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointPositionCtrl);
+                position_controller->orocos_port.doc("Input for JointPosition-cmds from Orocos to Gazebo world.");
+                _ports.addPort(position_controller->orocos_port);
 
-		position_controller->joint_cmd = JointAngles(_number_of_dofs);
-		position_controller->joint_cmd.angles.setZero();
+                position_controller->joint_cmd = JointAngles(_number_of_dofs);
+                position_controller->joint_cmd.angles.setZero();
 
-		_gazebo_position_joint_controller.reset(new gazebo::physics::JointController(_model));
+                _gazebo_position_joint_controller.reset(new gazebo::physics::JointController(_model));
+    }
+    else if(controller_type == ControlModes::JointVelocityCtrl){
+        velocity_controller.reset(new velocity_ctrl);
+                velocity_controller->orocos_port.setName(_kinematic_chain_name+"_"+ControlModes::JointVelocityCtrl);
+                velocity_controller->orocos_port.doc("Input for JointVelocity-cmds from Orocos to Gazebo world.");
+                _ports.addPort(velocity_controller->orocos_port);
+
+                velocity_controller->joint_cmd = JointVelocities(_number_of_dofs);
+                velocity_controller->joint_cmd.velocities.setZero();
+
+                _gazebo_velocity_joint_controller.reset(new gazebo::physics::JointController(_model));
     }
     else if(controller_type == ControlModes::JointImpedanceCtrl){
     	impedance_controller.reset(new impedance_ctrl);
@@ -189,7 +219,7 @@ bool KinematicChain::setJointNamesAndIndices()
     {
         gazebo::physics::JointPtr joint = _model->GetJoint(it1->first);
         if(!joint){
-            RTT::log(RTT::Error) << "No Joint" << it1->first << " could be added, exiting" << RTT::endlog();
+            RTT::log(RTT::Error) << "No Joint " << it1->first << " could be added, exiting" << RTT::endlog();
             return false;}
         _map_joint_name_scoped_name[it1->first] = _model->GetJoint(it1->first)->GetScopedName();
 
@@ -199,19 +229,55 @@ bool KinematicChain::setJointNamesAndIndices()
     return true;
 }
 
-bool KinematicChain::initGazeboJointController()
+bool KinematicChain::initGazeboJointController(const std::string &controlMode)
 {
-    for(unsigned int i = 0; i < _joint_names.size(); ++i)
-            _gazebo_position_joint_controller->AddJoint(_model->GetJoint(_joint_names[i]));
-
-    RTT::log(RTT::Info)<<_kinematic_chain_name<<" PIDs:"<<RTT::endlog();
     std::vector<std::string> joint_scoped_names = getJointScopedNames();
-    for(unsigned int i = 0; i < joint_scoped_names.size(); ++i){
-        cogimon::PIDGain pid;
-        _gains->getPID(_kinematic_chain_name, _joint_names[i], pid);
-        _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], gazebo::common::PID(pid.P,pid.I,pid.D));
-        RTT::log(RTT::Info)<<"  "<<pid.joint_name<<" P: "<<pid.P<<" I: "<<pid.I<<" D: "<<pid.D<<RTT::endlog();
+    if (controlMode == ControlModes::JointPositionCtrl)
+    {
+        for(unsigned int i = 0; i < _joint_names.size(); ++i)
+                _gazebo_position_joint_controller->AddJoint(_model->GetJoint(_joint_names[i]));
+
+        RTT::log(RTT::Info)<<_kinematic_chain_name<<" Position PIDs:"<<RTT::endlog();
+        for(unsigned int i = 0; i < joint_scoped_names.size(); ++i){
+            cogimon::PIDGain pid;
+            _gains->getPID(_kinematic_chain_name, _joint_names[i], pid);
+            _gazebo_position_joint_controller->SetPositionPID(joint_scoped_names[i], gazebo::common::PID(pid.P,pid.I,pid.D));
+            RTT::log(RTT::Info)<<"  "<<pid.joint_name<<" P: "<<pid.P<<" I: "<<pid.I<<" D: "<<pid.D << " -> " << joint_scoped_names[i]<<RTT::endlog();
+        }
+
+        _gazebo_velocity_joint_controller->Reset();
+
+        return true;
     }
+    else if (controlMode == ControlModes::JointVelocityCtrl)
+    {
+        for(unsigned int i = 0; i < _joint_names.size(); ++i)
+                _gazebo_velocity_joint_controller->AddJoint(_model->GetJoint(_joint_names[i]));
+
+        RTT::log(RTT::Info)<<_kinematic_chain_name<<" Velocity PIDs:"<<RTT::endlog();
+        for(unsigned int i = 0; i < joint_scoped_names.size(); ++i){
+            cogimon::VelPIDGain velPid;
+            _gains->getVelPID(_kinematic_chain_name, _joint_names[i], velPid);
+            _gazebo_velocity_joint_controller->SetVelocityPID(joint_scoped_names[i], gazebo::common::PID(velPid.P,velPid.I,velPid.D));
+            RTT::log(RTT::Info)<<"  "<<velPid.joint_name<<" P: "<<velPid.P<<" I: "<<velPid.I<<" D: "<<velPid.D<<RTT::endlog();
+        }
+
+        _gazebo_position_joint_controller->Reset();
+
+        return true;
+    }
+
+    return false;
+}
+
+bool KinematicChain::runtimeVelPidUpdate(const std::string &joint_name, const double &p, const double &i, const double &d)
+{
+    std::vector<std::string> joint_scoped_names = getJointScopedNames();
+    if(!(std::find(joint_scoped_names.begin(), joint_scoped_names.end(), joint_name) != joint_scoped_names.end())){
+        RTT::log(RTT::Error)<<joint_name<<" is not available!"<<RTT::endlog();
+        return false;}
+
+    _gazebo_velocity_joint_controller->SetVelocityPID(joint_name, gazebo::common::PID(p,i,d));
 
     return true;
 }
@@ -219,18 +285,26 @@ bool KinematicChain::initGazeboJointController()
 void KinematicChain::setInitialPosition(const bool use_actual_model_pose)
 {
     position_controller->orocos_port.clear();
+    velocity_controller->orocos_port.clear();
     if(use_actual_model_pose)
     {
         for(unsigned int i = 0; i < _joint_names.size(); ++i)
+        {
             position_controller->joint_cmd.angles[i] = _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
+            velocity_controller->joint_cmd.velocities[i] = _model->GetJoint(_joint_names[i])->GetVelocity(0);
+        }
     }
     else
     {
         for(unsigned int i = 0; i < _joint_names.size(); ++i)
+        {
             position_controller->joint_cmd.angles[i] = _initial_joints_configuration[i];
+            velocity_controller->joint_cmd.velocities[i] = 0;
+        }
         ///TODO: check if user initial config is set when it is used in the gazebo configure hook
     }
     position_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
+    velocity_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
 }
 
 void KinematicChain::setInitialImpedance()
@@ -249,6 +323,7 @@ void KinematicChain::setInitialImpedance()
 bool KinematicChain::setControlMode(const std::string &controlMode)
 {
     if(controlMode != ControlModes::JointPositionCtrl &&
+       controlMode != ControlModes::JointVelocityCtrl &&
        controlMode != ControlModes::JointTorqueCtrl   &&
        controlMode != ControlModes::JointImpedanceCtrl ){
         RTT::log(RTT::Warning) << "Control Mode " << controlMode << " does not exist!" << RTT::endlog();
@@ -260,15 +335,17 @@ bool KinematicChain::setControlMode(const std::string &controlMode)
         return false;
     }
 
-    if(controlMode == ControlModes::JointPositionCtrl){
-        if(!initGazeboJointController()){
+    if(controlMode == ControlModes::JointPositionCtrl || controlMode == ControlModes::JointVelocityCtrl){
+        if(!initGazeboJointController(controlMode)){
             RTT::log(RTT::Warning) << "Can NOT initialize Gazebo Joint Controller!" << RTT::endlog();
             return false;}
         else
             setInitialPosition();
     }
-    else if(controlMode == ControlModes::JointTorqueCtrl || controlMode == ControlModes::JointImpedanceCtrl)
+    else {
         _gazebo_position_joint_controller->Reset();
+        _gazebo_velocity_joint_controller->Reset();
+    }
 
     _current_control_mode = controlMode;
     return true;
@@ -308,6 +385,9 @@ void KinematicChain::getCommand()
     else if(_current_control_mode == ControlModes::JointPositionCtrl)
         position_controller->joint_cmd_fs = position_controller->orocos_port.readNewest(
                     position_controller->joint_cmd);
+    else if(_current_control_mode == ControlModes::JointVelocityCtrl)
+        velocity_controller->joint_cmd_fs = velocity_controller->orocos_port.readNewest(
+                    velocity_controller->joint_cmd);
     else if(_current_control_mode == ControlModes::JointImpedanceCtrl){
         position_controller->joint_cmd_fs = position_controller->orocos_port.readNewest(
                     position_controller->joint_cmd);
@@ -325,6 +405,12 @@ void KinematicChain::move()
         for(unsigned int i = 0; i < joint_scoped_names.size(); ++i)
             _gazebo_position_joint_controller->SetPositionTarget(joint_scoped_names[i], position_controller->joint_cmd.angles(i));
         _gazebo_position_joint_controller->Update();
+    }
+    else if(_current_control_mode == ControlModes::JointVelocityCtrl){
+        std::vector<std::string> joint_scoped_names = getJointScopedNames();
+        for(unsigned int i = 0; i < joint_scoped_names.size(); ++i)
+            _gazebo_velocity_joint_controller->SetVelocityTarget(joint_scoped_names[i], velocity_controller->joint_cmd.velocities(i));
+        _gazebo_velocity_joint_controller->Update();
     }
     else if(_current_control_mode == ControlModes::JointTorqueCtrl){
         for(unsigned int i = 0; i < _joint_names.size(); ++i)

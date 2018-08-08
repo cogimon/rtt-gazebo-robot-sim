@@ -41,6 +41,7 @@ public:
     robotSim(std::string const& name);
     bool configureHook();
     void updateHook();
+    void cleanupHook();
     void WorldUpdateBegin();
     void WorldUpdateEnd();
     ~robotSim();
@@ -58,6 +59,8 @@ protected:
     std::map<std::string, std::vector<std::string> > getKinematiChainsAndJoints();
     bool resetModelConfiguration();
     bool setInitialPosition(const std::string& kin_chain, const std::vector<double>& init);
+    bool runtimeVelPidUpdate(const std::string &kin_chain, const std::string& joint_name,
+                           const double& p, const double& i, const double& d);
     std::vector<std::string> getForceTorqueSensorsFrames();
 
     gazebo::physics::ModelPtr model;

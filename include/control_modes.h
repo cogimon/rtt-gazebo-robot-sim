@@ -8,6 +8,7 @@ namespace cogimon {
 
     struct ControlModes{
             static constexpr const char* JointPositionCtrl = "JointPositionCtrl";
+            static constexpr const char* JointVelocityCtrl = "JointVelocityCtrl";
             static constexpr const char* JointTorqueCtrl = "JointTorqueCtrl";
             static constexpr const char* JointImpedanceCtrl = "JointImpedanceCtrl";
     };

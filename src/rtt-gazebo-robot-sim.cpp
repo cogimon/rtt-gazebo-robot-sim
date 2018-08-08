@@ -54,6 +54,8 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getForceTorqueSensorsFrames", &robotSim::getForceTorqueSensorsFrames,
                 this, RTT::ClientThread);
 
+    addOperation("runtimeVelPidUpdate", &robotSim::runtimeVelPidUpdate, this);
+
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
@@ -136,9 +138,14 @@ bool robotSim::setControlMode(const std::string& kinematic_chain, const std::str
 }
 
 bool robotSim::getModel(const std::string& model_name) {
-    if (model) {
-        log(Warning) << "Model [" << model_name << "] already loaded !"
+    if (is_configured) {
+        log(Error) << "Model cannot be changed since component is already configured!"
                 << endlog();
+        return false;
+    }
+    if (model) {
+        if (model_name == "") model.reset();
+        else log(Warning) << "Model [" << model_name << "] already loaded !" << endlog();
         return true;
     }
     gazebo::printVersion();
@@ -161,6 +168,15 @@ void robotSim::updateHook() {
 bool robotSim::configureHook() {
     this->is_configured = gazeboConfigureHook(model);
     return is_configured;
+}
+
+void robotSim::cleanupHook() {
+    is_configured = false;
+    gazebo_joints_.clear();
+    model_links_.clear();
+    ports()->clear();
+    kinematic_chains.clear();
+    force_torque_sensors.clear();
 }
 
 //Here we already have the model!
@@ -263,6 +279,12 @@ bool robotSim::loadURDFAndSRDF(const std::string &URDF_path, const std::string &
                 RTT::log(RTT::Info)<<"  "<<enabled_joints_in_chain_i[j]<<RTT::endlog();
         }
     }
+    else if (URDF_path.empty() || SRDF_path.empty())
+    {
+        _models_loaded = false;
+        _xbotcore_model = XBot::XBotCoreModel();
+        gains = gain_parser();
+    }
     else
         RTT::log(RTT::Info)<<"URDF and SRDF have been already loaded!"<<RTT::endlog();
 
@@ -288,6 +310,19 @@ bool robotSim::setInitialPosition(const std::string& kin_chain, const std::vecto
         a = a && resetModelConfiguration();
 
     return a;
+}
+
+bool robotSim::runtimeVelPidUpdate(const std::string &kin_chain, const std::string &joint_name,
+                                 const double &p, const double &i, const double &d)
+{
+    std::vector<std::string> kin_chains = getKinematiChains();
+    if(!(std::find(kin_chains.begin(), kin_chains.end(), kin_chain) != kin_chains.end())){
+        RTT::log(RTT::Error)<<kin_chain<<" is not available!"<<RTT::endlog();
+        return false;}
+
+    RTT::log(RTT::Info) << kin_chain << "." << joint_name << "updated: "
+                        << "P(" << p << ") I(" << i << ") D(" << d << ")" << RTT::endlog();
+    return kinematic_chains[kin_chain]->runtimeVelPidUpdate(joint_name, p, i, d);
 }
 
 std::vector<std::string> robotSim::getForceTorqueSensorsFrames()

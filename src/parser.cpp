@@ -29,6 +29,7 @@ bool gain_parser::initFile(const std::string &filename)
 
          std::vector<std::string> controllers;
          cogimon::gains::PIDGains pids;
+         cogimon::gains::VelPIDGains velPids;
          cogimon::gains::ImpedanceGains impedances;
 
          ppParam = pParm->FirstChildElement(cogimon::parsed_words::controller_tag);
@@ -56,6 +57,20 @@ bool gain_parser::initFile(const std::string &filename)
 
                     pids.push_back(pid);
                 }
+                else if(controller_type.compare(ControlModes::JointVelocityCtrl) == 0)
+                {
+                    std::string P = pppParam->Attribute(cogimon::parsed_words::P_attribute);
+                    std::string I = pppParam->Attribute(cogimon::parsed_words::I_attribute);
+                    std::string D = pppParam->Attribute(cogimon::parsed_words::D_attribute);
+
+                    cogimon::VelPIDGain velPid;
+                    velPid.joint_name = joint_name;
+                    velPid.P = std::atof(P.c_str());
+                    velPid.I = std::atof(I.c_str());
+                    velPid.D = std::atof(D.c_str());
+
+                    velPids.push_back(velPid);
+                }
                 else if(controller_type.compare(ControlModes::JointImpedanceCtrl) == 0)
                 {
                     std::string stiffness = pppParam->Attribute(cogimon::parsed_words::stiffness_attribute);
@@ -76,6 +91,8 @@ bool gain_parser::initFile(const std::string &filename)
 
             if(controller_type.compare(ControlModes::JointPositionCtrl) == 0)
                 Gains.map_PIDGains[kin_chain_name] = pids;
+            else if(controller_type.compare(ControlModes::JointVelocityCtrl) == 0)
+                Gains.map_VelPIDGains[kin_chain_name] = velPids;
             else if(controller_type.compare(ControlModes::JointImpedanceCtrl) == 0)
                 Gains.map_ImpedanceGains[kin_chain_name] = impedances;
 
@@ -101,6 +118,7 @@ void gain_parser::printGains()
 {
     std::map<cogimon::gains::kinematic_chain, std::vector<std::string>>::iterator map_controllers_it;
     std::map<cogimon::gains::kinematic_chain, cogimon::gains::PIDGains>::iterator map_PIDGains_it;
+    std::map<cogimon::gains::kinematic_chain, cogimon::gains::VelPIDGains>::iterator map_VelPIDGains_it;
     std::map<cogimon::gains::kinematic_chain, cogimon::gains::ImpedanceGains>::iterator map_ImpedanceGains_it;
 
     for(map_controllers_it = Gains.map_controllers.begin();
@@ -125,6 +143,18 @@ void gain_parser::printGains()
         for(unsigned int i = 0; i < pids.size(); ++i)
             std::cout<<"    "<<pids[i].joint_name<<"    P: "<<pids[i].P
                     <<" I: "<<pids[i].I<<" D: "<<pids[i].D<<std::endl;
+    }
+
+    for(map_VelPIDGains_it = Gains.map_VelPIDGains.begin();
+        map_VelPIDGains_it != Gains.map_VelPIDGains.end(); map_VelPIDGains_it++)
+    {
+        std::string kin_chain_name = map_VelPIDGains_it->first;
+        cogimon::gains::VelPIDGains velPids= map_VelPIDGains_it->second;
+
+        std::cout<<kin_chain_name<<"  JointVelocityCtrl:"<<std::endl;
+        for(unsigned int i = 0; i < velPids.size(); ++i)
+            std::cout<<"    "<<velPids[i].joint_name<<"    P: "<<velPids[i].P
+                    <<" I: "<<velPids[i].I<<" D: "<<velPids[i].D<<std::endl;
     }
 
     for(map_ImpedanceGains_it = Gains.map_ImpedanceGains.begin();
