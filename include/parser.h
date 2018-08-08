@@ -31,6 +31,13 @@ struct PIDGain{
     double D = 0.0;
 };
 
+struct VelPIDGain{
+    std::string joint_name;
+    double P = 0.0;
+    double I = 0.0;
+    double D = 0.0;
+};
+
 struct ImpedanceGain{
     std::string joint_name;
     double stiffness = 0.0;
@@ -40,10 +47,12 @@ struct ImpedanceGain{
 struct gains{
     typedef std::string kinematic_chain;
     typedef std::vector<PIDGain> PIDGains;
+    typedef std::vector<VelPIDGain> VelPIDGains;
     typedef std::vector<ImpedanceGain> ImpedanceGains;
 
     std::map<kinematic_chain, std::vector<std::string>> map_controllers;
     std::map<kinematic_chain, PIDGains> map_PIDGains;
+    std::map<kinematic_chain, VelPIDGains> map_VelPIDGains;
     std::map<kinematic_chain, ImpedanceGains> map_ImpedanceGains;
 
     gains()
@@ -55,6 +64,7 @@ struct gains{
     {
         map_controllers = _gains.map_controllers;
         map_PIDGains = _gains.map_PIDGains;
+        map_VelPIDGains = _gains.map_VelPIDGains;
         map_ImpedanceGains = _gains.map_ImpedanceGains;
     }
 
@@ -62,9 +72,9 @@ struct gains{
     {
         if(map_controllers.find(kc) == map_controllers.end())
             return false;
-        
+
         std::vector<std::string> available_controllers = map_controllers.at(kc);
-        if(std::find(available_controllers.begin(), available_controllers.end(), 
+        if(std::find(available_controllers.begin(), available_controllers.end(),
                      std::string(ControlModes::JointPositionCtrl)) != available_controllers.end())
         {
             PIDGains pids= map_PIDGains.at(kc);
@@ -77,8 +87,32 @@ struct gains{
                 }
             }
             return false;
-        } 
-        else 
+        }
+        else
+            return false;
+    }
+
+    bool getVelPID(const kinematic_chain& kc, const std::string& joint_name, VelPIDGain& velPid)
+    {
+        if(map_controllers.find(kc) == map_controllers.end())
+            return false;
+
+        std::vector<std::string> available_controllers = map_controllers.at(kc);
+        if(std::find(available_controllers.begin(), available_controllers.end(),
+                     std::string(ControlModes::JointVelocityCtrl)) != available_controllers.end())
+        {
+            VelPIDGains velPids= map_VelPIDGains.at(kc);
+            for(unsigned int i = 0; i < velPids.size(); ++i)
+            {
+                if(joint_name.compare(velPids[i].joint_name) == 0)
+                {
+                    velPid = velPids[i];
+                    return true;
+                }
+            }
+            return false;
+        }
+        else
             return false;
     }
 

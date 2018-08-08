@@ -26,6 +26,7 @@ using namespace rstrt::robot;
 
 
 typedef cogimon::jointCtrl<JointAngles> position_ctrl;
+typedef cogimon::jointCtrl<JointVelocities> velocity_ctrl;
 typedef cogimon::jointCtrl<JointImpedance> impedance_ctrl;
 typedef cogimon::jointCtrl<JointTorques> torque_ctrl;
 
@@ -56,9 +57,12 @@ public:
     std::string printKinematicChainInformation();
 
     bool setInitialJointConfiguration(const std::vector<double>& home);
+    bool runtimeVelPidUpdate(const std::string& joint_name,
+                           const double& p, const double& i, const double& d);
 
 
     boost::shared_ptr<position_ctrl> position_controller;
+    boost::shared_ptr<velocity_ctrl> velocity_controller;
     boost::shared_ptr<impedance_ctrl> impedance_controller;
     boost::shared_ptr<torque_ctrl> torque_controller;
 
@@ -74,6 +78,7 @@ private:
     gazebo::physics::ModelPtr _model;
     std::string _current_control_mode;
     gazebo::physics::JointControllerPtr _gazebo_position_joint_controller;
+    gazebo::physics::JointControllerPtr _gazebo_velocity_joint_controller;
     std::vector<std::string> _joint_names;
     std::map<std::string, std::string> _map_joint_name_scoped_name;
 
@@ -82,7 +87,7 @@ private:
     bool setController(const std::string& controller_type);
     void setFeedBack();
     bool setJointNamesAndIndices();
-    bool initGazeboJointController();
+    bool initGazeboJointController(const std::string& controlMode);
     std::vector<std::string> getJointScopedNames();
     void setInitialPosition(const bool use_actual_model_pose = true);
     void setInitialImpedance();

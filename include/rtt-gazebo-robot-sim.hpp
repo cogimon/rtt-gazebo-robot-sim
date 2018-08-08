@@ -56,12 +56,13 @@ public:
     #ifdef USE_INTROSPECTION
     bool configureHookInternal();
     void updateHookInternal();
-	bool startHookInternal();
-	void stopHookInternal();
-	void cleanupHookInternal();
+	  bool startHookInternal();
+	  void stopHookInternal();
+	  void cleanupHookInternal();
     #else
     bool configureHook();
     void updateHook();
+    void cleanupHook();
     #endif
     void WorldUpdateBegin();
     void WorldUpdateEnd();
@@ -80,6 +81,8 @@ protected:
     std::map<std::string, std::vector<std::string> > getKinematiChainsAndJoints();
     bool resetModelConfiguration();
     bool setInitialPosition(const std::string& kin_chain, const std::vector<double>& init);
+    bool runtimeVelPidUpdate(const std::string &kin_chain, const std::string& joint_name,
+                           const double& p, const double& i, const double& d);
     std::vector<std::string> getForceTorqueSensorsFrames();
     bool getLinkPoseVelocityGazebo(const std::string& link_name,
                            rstrt::geometry::Pose& pose,
