@@ -23,6 +23,7 @@ set (Eigen_INCLUDE_DIRS "/usr/include/eigen3")
 find_package(orocos_kdl REQUIRED)
 find_package(Boost COMPONENTS thread REQUIRED)
 find_package(srdfdom_advr REQUIRED)
+find_package(XBotInterface REQUIRED)
 find_package(XBotCoreModel REQUIRED)
 
 find_package(RST-RT REQUIRED)
@@ -30,6 +31,31 @@ message(STATUS "RST-RT version: ${RST-RT_VERSION}")
 include_directories(BEFORE SYSTEM ${RST-RT_INCLUDE_DIRS})
 add_definitions(${RST-RT_CFLAGS})
 link_directories(${RST-RT_LIBRARY_DIR} ${RST-RT_LIBRARY_DIRS})
+
+option(DISABLE_INTROSPECTION "Disable introspection features" TRUE)
+
+if (DISABLE_INTROSPECTION)
+    message(STATUS "###################################################")
+    message(STATUS "### RTT-CORE-EXTENSIONS Introspection disabled! ###")
+    message(STATUS "###################################################")
+else()
+    find_package(RTT-CORE-EXTENSIONS 0.2)
+    if (RTT-CORE-EXTENSIONS_FOUND)
+        message(STATUS "RTT-CORE-EXTENSIONS_LIBRARIES: ${RTT-CORE-EXTENSIONS_LIBRARIES}")
+        message(STATUS "RTT-CORE-EXTENSIONS_LIBRARY_DIRS: ${RTT-CORE-EXTENSIONS_LIBRARY_DIRS}")
+        message(STATUS "RTT-CORE-EXTENSIONS_INCLUDE_DIRS: ${RTT-CORE-EXTENSIONS_INCLUDE_DIRS}")
+        message(STATUS "##################################################")
+        message(STATUS "### RTT-CORE-EXTENSIONS Introspection enabled! ###")
+        message(STATUS "##################################################")
+        set_property(DIRECTORY ${PROJECT_SOURCE_DIR} APPEND PROPERTY COMPILE_DEFINITIONS USE_INTROSPECTION)
+    else()
+        message(STATUS "###################################################")
+        message(STATUS "### RTT-CORE-EXTENSIONS Introspection disabled! ###")
+        message(STATUS "###################################################")
+    endif()
+endif()
+
+link_directories(${RTT-CORE-EXTENSIONS_LIBRARY_DIRS})
 
 find_package(PkgConfig REQUIRED)
 pkg_search_module(TINYXML REQUIRED tinyxml)
@@ -58,6 +84,8 @@ include_directories(
     ${RST-RT_INCLUDE_DIRS}
     ${TINYXML_INCLUDE_DIRS}
     ${srdfdom_advr_INCLUDE_DIRS}
+    ${XBotInterface_INCLUDE_DIRS}
+    ${RTT-CORE-EXTENSIONS_INCLUDE_DIRS}
     ${XBotCoreModel_INCLUDE_DIRS}
 )
 
@@ -68,7 +96,7 @@ ADD_LIBRARY(gain_parser SHARED src/parser.cpp)
 TARGET_LINK_LIBRARIES(gain_parser ${TINYXML_LIBRARIES})
 
 orocos_component(${PROJECT_NAME} src/rtt-gazebo-robot-sim.cpp src/rtt-gazebo-robot-sim_hooks.cpp src/kinematic_chain.cpp
- src/force_torque_sensor.cpp ${rtt_gazebo_robot_sim_INCLUDES})
+ src/force_torque_sensor.cpp src/imu.cpp ${rtt_gazebo_robot_sim_INCLUDES})
 set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY COMPILE_DEFINITIONS RTT_COMPONENT)
 
 target_link_libraries(${PROJECT_NAME}
@@ -81,6 +109,8 @@ target_link_libraries(${PROJECT_NAME}
    ${RST-RT_LIBRARIES}
    ${TINYXML_LIBRARIES}
    ${srdfdom_advr_LIBRARIES}
+   ${XBotInterface_LIBRARIES}
+   ${RTT-CORE-EXTENSIONS_LIBRARIES}
    ${XBotCoreModel_LIBRARIES}
 )
 

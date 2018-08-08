@@ -12,7 +12,11 @@ using namespace RTT::os;
 using namespace Eigen;
 
 robotSim::robotSim(const std::string &name):
+#ifdef USE_INTROSPECTION
+    cogimon::RTTIntrospectionBase(name),
+#else
     TaskContext(name),
+#endif
     is_configured(false),
     _models_loaded(false)
 {
@@ -54,14 +58,23 @@ robotSim::robotSim(const std::string &name):
     this->addOperation("getForceTorqueSensorsFrames", &robotSim::getForceTorqueSensorsFrames,
                 this, RTT::ClientThread);
 
-    addOperation("runtimeVelPidUpdate", &robotSim::runtimeVelPidUpdate, this);
+    this->addOperation("runtimeVelPidUpdate", &robotSim::runtimeVelPidUpdate,
+                this, RTT::ClientThread);
+
+    this->addOperation("getLinkPoseVelocityGazebo", &robotSim::getLinkPoseVelocityGazebo,
+                this, RTT::ClientThread);
+
+    this->addOperation("getIMUSensorsFrames", &robotSim::getIMUSensorsFrames,
+                this, RTT::ClientThread);
 
     world_begin = gazebo::event::Events::ConnectWorldUpdateBegin(
             boost::bind(&robotSim::WorldUpdateBegin, this));
     world_end = gazebo::event::Events::ConnectWorldUpdateEnd(
             boost::bind(&robotSim::WorldUpdateEnd, this));
 
-
+#ifdef USE_INTROSPECTION
+    cts_worldUpdate = rstrt::monitoring::CallTraceSample("WorldUpdate()", this->getName(), 0.0, rstrt::monitoring::CallTraceSample::CALL_UNIVERSAL);
+#endif
 }
 
 bool robotSim::resetModelConfiguration()
@@ -162,10 +175,33 @@ bool robotSim::getModel(const std::string& model_name) {
     return bool(model);
 }
 
+#ifdef USE_INTROSPECTION
+void robotSim::updateHookInternal() {
+#else
 void robotSim::updateHook() {
+#endif
+
 }
 
+#ifdef USE_INTROSPECTION
+bool robotSim::startHookInternal() {
+    return true;
+}
+
+void robotSim::stopHookInternal() {
+
+}
+
+void robotSim::cleanupHookInternal() {
+
+}
+#endif
+
+#ifdef USE_INTROSPECTION
+bool robotSim::configureHookInternal() {
+#else
 bool robotSim::configureHook() {
+#endif
     this->is_configured = gazeboConfigureHook(model);
     return is_configured;
 }
@@ -206,7 +242,11 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
         kinematic_chains.insert(std::pair<std::string, boost::shared_ptr<KinematicChain>>(
             chain_name, boost::shared_ptr<KinematicChain>(
-                new KinematicChain(chain_name, enabled_joints_in_chain, *(this->ports()), model))));
+                new KinematicChain(chain_name, enabled_joints_in_chain, *(this->ports()), model
+#ifdef USE_INTROSPECTION
+                ,this
+#endif
+                ))));
     }
 
     RTT::log(RTT::Info) << "Kinematic Chains map created!" << RTT::endlog();
@@ -225,14 +265,14 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
 
     RTT::log(RTT::Info) << "Checking Sensors (URDF/SRDF)"<<RTT::endlog();
     std::map<std::string,int> ft_srdf = _xbotcore_model.get_ft_sensors();
+    std::map<std::string,int> imu_srdf = _xbotcore_model.get_imu_sensors();
 
 
     RTT::log(RTT::Info) << "Force Update of SensorManager (before accessing sensors)!" << RTT::endlog();
     gazebo::sensors::SensorManager::Instance()->Update(true);
 
     RTT::log(RTT::Info) << "Checking Sensors (Gazebo)"<<RTT::endlog();
-    gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->
-            GetSensors();
+    gazebo::sensors::Sensor_V sensors = gazebo::sensors::SensorManager::Instance()->GetSensors();
 
     gazebo::sensors::Sensor_V sensors_attached_to_robot;
     for(unsigned int i = 0; i < sensors.size(); ++i){
@@ -240,17 +280,24 @@ bool robotSim::gazeboConfigureHook(gazebo::physics::ModelPtr model) {
             sensors_attached_to_robot.push_back(sensors[i]);
     }
 
-    for(std::map<std::string,int>::iterator i = ft_srdf.begin();
-        i != ft_srdf.end(); i++)
+    for(std::map<std::string,int>::iterator i = ft_srdf.begin(); i != ft_srdf.end(); i++)
     {
         force_torque_sensor ft(i->first, model, _xbotcore_model.get_urdf_model(),
                                sensors_attached_to_robot,
-                               *(this->ports()));
+                               *(this->ports())
+    #ifdef USE_INTROSPECTION
+                               ,this
+    #endif
+                               );
         if(ft.isInited())
             force_torque_sensors.push_back(ft);
     }
 
-
+    for(std::map<std::string,int>::iterator i = imu_srdf.begin(); i != imu_srdf.end(); ++i){
+        imu_sensor imu_(i->first,sensors_attached_to_robot,*(this->ports()));
+        if(imu_.isInited())
+            imu_sensors.push_back(imu_);
+    }
 
 
 
@@ -333,10 +380,45 @@ std::vector<std::string> robotSim::getForceTorqueSensorsFrames()
     return tmp;
 }
 
+std::vector<std::string> robotSim::getIMUSensorsFrames()
+{
+    std::vector<std::string> tmp;
+    for(unsigned int i = 0; i < imu_sensors.size(); ++i)
+        tmp.push_back(imu_sensors[i].getFrame());
+    return tmp;
+}
+
 robotSim::~robotSim() {
     // Disconnect slots
     gazebo::event::Events::DisconnectWorldUpdateBegin(world_begin);
     gazebo::event::Events::DisconnectWorldUpdateEnd(world_end);
+}
+
+bool robotSim::getLinkPoseVelocityGazebo(const std::string& link_name, rstrt::geometry::Pose& pose,
+                       rstrt::kinematics::Twist& twist)
+{
+    gazebo::physics::LinkPtr link = model->GetLink(link_name);
+    if(link)
+    {
+        gazebo::math::Pose tmp = link->GetWorldPose();
+        rstrt::geometry::Pose tmp_pose(tmp.pos.x, tmp.pos.y, tmp.pos.z, link_name,
+                                   tmp.rot.w, tmp.rot.x, tmp.rot.y, tmp.rot.z, link_name);
+        pose = tmp_pose;
+
+        gazebo::math::Vector3 vel =  link->GetWorldLinearVel();
+        gazebo::math::Vector3 omega = link->GetWorldAngularVel();
+        twist.linear[0] = vel.x;
+        twist.linear[1] = vel.y;
+        twist.linear[2] = vel.z;
+        twist.angular[0] = omega.x;
+        twist.angular[1] = omega.y;
+        twist.angular[2] = omega.z;
+
+        return true;
+    }
+
+    RTT::log(RTT::Error)<<"Link "<<link_name<<" does not exists!"<<RTT::endlog();
+    return false;
 }
 
 ORO_CREATE_COMPONENT_LIBRARY()
