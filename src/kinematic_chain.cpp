@@ -229,7 +229,7 @@ void KinematicChain::setInitialPosition(const bool use_actual_model_pose)
     if(use_actual_model_pose)
     {
         for(unsigned int i = 0; i < _joint_names.size(); ++i)
-            position_controller->joint_cmd.angles[i] = _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
+            position_controller->joint_cmd.angles[i] = _model->GetJoint(_joint_names[i])->Position(0);
     }
     else
     {
@@ -286,7 +286,7 @@ void KinematicChain::sense()
 	if (full_feedback) {
 		for (unsigned int i = 0; i < _number_of_dofs; ++i)
 			full_feedback->joint_feedback.angles(i) = _model->GetJoint(
-					_joint_names[i])->GetAngle(0).Radian();
+                    _joint_names[i])->Position(0);
 
 		for (unsigned int i = 0; i < _number_of_dofs; ++i)
 			full_feedback->joint_feedback.velocities(i) = _model->GetJoint(

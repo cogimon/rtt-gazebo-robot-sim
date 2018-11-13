@@ -4,6 +4,9 @@
 #include <fstream>
 #include <streambuf>
 #include <gazebo/sensors/sensors.hh>
+#include <ignition/math.hh>
+#include <gazebo/common/Events.hh>
+
 
 
 using namespace cogimon;
@@ -158,7 +161,7 @@ bool robotSim::getModel(const std::string& model_name) {
         log(Error) << "getWorldPtr does not seem to exists" << endlog();
         return false;
     }
-    model = gazebo::physics::get_world()->GetModel(model_name);
+    model = gazebo::physics::get_world()->ModelByName(model_name);
     if (model) {
         log(Info) << "Model [" << model_name << "] successfully loaded !"
                 << endlog();
@@ -354,8 +357,8 @@ std::vector<std::string> robotSim::getIMUSensorsFrames()
 
 robotSim::~robotSim() {
     // Disconnect slots
-    gazebo::event::Events::DisconnectWorldUpdateBegin(world_begin);
-    gazebo::event::Events::DisconnectWorldUpdateEnd(world_end);
+//    gazebo::event::Events::DisconnectWorldUpdateBegin(world_begin);
+//    gazebo::event::Events::DisconnectWorldUpdateEnd(world_end);
 }
 
 bool robotSim::getLinkPoseVelocityGazebo(const std::string& link_name, rstrt::geometry::Pose& pose,
@@ -364,19 +367,19 @@ bool robotSim::getLinkPoseVelocityGazebo(const std::string& link_name, rstrt::ge
     gazebo::physics::LinkPtr link = model->GetLink(link_name);
     if(link)
     {
-        gazebo::math::Pose tmp = link->GetWorldPose();
-        rstrt::geometry::Pose tmp_pose(tmp.pos.x, tmp.pos.y, tmp.pos.z, link_name,
-                                   tmp.rot.w, tmp.rot.x, tmp.rot.y, tmp.rot.z, link_name);
+        ignition::math::Pose3d tmp = link->WorldPose();
+        rstrt::geometry::Pose tmp_pose(tmp.Pos().X(), tmp.Pos().Y(), tmp.Pos().Z(), link_name,
+                                   tmp.Rot().W(), tmp.Rot().X(), tmp.Rot().Y(), tmp.Rot().Z(), link_name);
         pose = tmp_pose;
 
-        gazebo::math::Vector3 vel =  link->GetWorldLinearVel();
-        gazebo::math::Vector3 omega = link->GetWorldAngularVel();
-        twist.linear[0] = vel.x;
-        twist.linear[1] = vel.y;
-        twist.linear[2] = vel.z;
-        twist.angular[0] = omega.x;
-        twist.angular[1] = omega.y;
-        twist.angular[2] = omega.z;
+        ignition::math::Vector3d vel =  link->WorldLinearVel();
+        ignition::math::Vector3d omega = link->WorldAngularVel();
+        twist.linear[0] = vel.X();
+        twist.linear[1] = vel.Y();
+        twist.linear[2] = vel.Z();
+        twist.angular[0] = omega.X();
+        twist.angular[1] = omega.Y();
+        twist.angular[2] = omega.Z();
 
         return true;
     }

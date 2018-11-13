@@ -22,9 +22,7 @@ include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 set (Eigen_INCLUDE_DIRS "/usr/include/eigen3")
 find_package(orocos_kdl REQUIRED)
 find_package(Boost COMPONENTS thread REQUIRED)
-find_package(srdfdom_advr REQUIRED)
 find_package(XBotInterface REQUIRED)
-find_package(XBotCoreModel REQUIRED)
 
 find_package(RST-RT REQUIRED)
 message(STATUS "RST-RT version: ${RST-RT_VERSION}")
@@ -83,7 +81,6 @@ include_directories(
     ${GAZEBO_INCLUDE_DIRS}
     ${RST-RT_INCLUDE_DIRS}
     ${TINYXML_INCLUDE_DIRS}
-    ${srdfdom_advr_INCLUDE_DIRS}
     ${XBotInterface_INCLUDE_DIRS}
     ${RTT-CORE-EXTENSIONS_INCLUDE_DIRS}
     ${XBotCoreModel_INCLUDE_DIRS}
@@ -108,10 +105,9 @@ target_link_libraries(${PROJECT_NAME}
    ${Boost_LIBRARIES}
    ${RST-RT_LIBRARIES}
    ${TINYXML_LIBRARIES}
-   ${srdfdom_advr_LIBRARIES}
-   ${XBotInterface_LIBRARIES}
    ${RTT-CORE-EXTENSIONS_LIBRARIES}
    ${XBotCoreModel_LIBRARIES}
+   ${XBotInterface_LIBRARIES}
 )
 
 install (TARGETS gain_parser

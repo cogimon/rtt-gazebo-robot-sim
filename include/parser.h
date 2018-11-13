@@ -62,9 +62,9 @@ struct gains{
     {
         if(map_controllers.find(kc) == map_controllers.end())
             return false;
-        
+
         std::vector<std::string> available_controllers = map_controllers.at(kc);
-        if(std::find(available_controllers.begin(), available_controllers.end(), 
+        if(std::find(available_controllers.begin(), available_controllers.end(),
                      std::string(ControlModes::JointPositionCtrl)) != available_controllers.end())
         {
             PIDGains pids= map_PIDGains.at(kc);
@@ -77,8 +77,8 @@ struct gains{
                 }
             }
             return false;
-        } 
-        else 
+        }
+        else
             return false;
     }
 
