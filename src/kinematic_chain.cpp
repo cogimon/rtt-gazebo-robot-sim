@@ -252,7 +252,7 @@ bool KinematicChain::initGazeboJointController(const std::string &controlMode)
             RTT::log(RTT::Info)<<"  "<<pid.joint_name<<" P: "<<pid.P<<" I: "<<pid.I<<" D: "<<pid.D << " -> " << joint_scoped_names[i]<<RTT::endlog();
         }
 
-        _gazebo_velocity_joint_controller->Reset();
+        if (_gazebo_velocity_joint_controller) _gazebo_velocity_joint_controller->Reset();
 
         return true;
     }
@@ -269,7 +269,7 @@ bool KinematicChain::initGazeboJointController(const std::string &controlMode)
             RTT::log(RTT::Info)<<"  "<<velPid.joint_name<<" P: "<<velPid.P<<" I: "<<velPid.I<<" D: "<<velPid.D<<RTT::endlog();
         }
 
-        _gazebo_position_joint_controller->Reset();
+        if (_gazebo_position_joint_controller) _gazebo_position_joint_controller->Reset();
 
         return true;
     }
@@ -292,13 +292,13 @@ bool KinematicChain::runtimeVelPidUpdate(const std::string &joint_name, const do
 void KinematicChain::setInitialPosition(const bool use_actual_model_pose)
 {
     position_controller->orocos_port.clear();
-    velocity_controller->orocos_port.clear();
+    if (velocity_controller) velocity_controller->orocos_port.clear();
     if(use_actual_model_pose)
     {
         for(unsigned int i = 0; i < _joint_names.size(); ++i)
         {
             position_controller->joint_cmd.angles[i] = _model->GetJoint(_joint_names[i])->GetAngle(0).Radian();
-            velocity_controller->joint_cmd.velocities[i] = _model->GetJoint(_joint_names[i])->GetVelocity(0);
+            if (velocity_controller) velocity_controller->joint_cmd.velocities[i] = _model->GetJoint(_joint_names[i])->GetVelocity(0);
         }
     }
     else
@@ -306,12 +306,12 @@ void KinematicChain::setInitialPosition(const bool use_actual_model_pose)
         for(unsigned int i = 0; i < _joint_names.size(); ++i)
         {
             position_controller->joint_cmd.angles[i] = _initial_joints_configuration[i];
-            velocity_controller->joint_cmd.velocities[i] = 0;
+            if (velocity_controller) velocity_controller->joint_cmd.velocities[i] = 0;
         }
         ///TODO: check if user initial config is set when it is used in the gazebo configure hook
     }
     position_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
-    velocity_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
+    if (velocity_controller) velocity_controller->joint_cmd_fs = RTT::FlowStatus::NewData;
 }
 
 void KinematicChain::setInitialImpedance()
